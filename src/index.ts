@@ -40,12 +40,10 @@ app.post("/dlogin", async (req: Request) => {
     const donor: Donor = (await db.findOne('Donors', 'Email', email));
 
     if (!donor) {
-      console.log(`No account found for email: ${email}`);
       return new Response("Account not found", { status: 400 });
     }
 
     const isPasswordCorrect = sha256.verify(password, donor.Password);
-    console.log(`Login attempt for email: ${email}, Password correct: ${isPasswordCorrect}  ${sha256.sign(password)}    ${donor.Password}`);
 
     if (isPasswordCorrect) {
       return Response.json({
@@ -91,7 +89,6 @@ app.post("/appointments", async (req: Request) => {
 //@ts-ignore
 app.get("/appointments", async (req: Request) => {
   const donor: Donor = await protect(req)
-  console.log(donor)
   if (donor) {
     const query = (await db.select(['*'], 'Appointments')).where('Donor', donor.ID)
     if (JSON.stringify(query) === '[]') {
@@ -147,9 +144,7 @@ app.post("/vlogin", async (req: Request) => {
 
 app.post("/events", async(req:Request)=>{ 
   const volunteer:Volunteer = await protect(req)
-    console.table(volunteer)
   if(volunteer && volunteer.Admin === true){
-    console.table(volunteer)
     const {name,location,address,postcode,date,start_time,end_time,target} = await parseBody(req)
     if(!name || !location || !address || !postcode || !date || !start_time || !end_time || !target){ 
       return new Response("Please fill in all details",{status:400})
@@ -164,7 +159,6 @@ app.post("/events", async(req:Request)=>{
 
 app.get("/events", async(req:Request)=>{ 
  const volunteer: Volunteer = await protect(req)
-  console.log(volunteer)
   if (volunteer) {
     const query = (await db.select(['*'], 'Events'))
     if (JSON.stringify(query) === '[]') {
