@@ -1,0 +1,80 @@
+{
+    "data": [
+        {
+            "ID": "D001",
+            "FirstName": "John",
+            "LastName": "Doe",
+            "Email": "john.doe@example.com",
+            "DateOfBirth": "1985-07-14",
+            "Title": "Mr.",
+            "PhoneNumber": "+1234567890",
+            "CityTownOfResidence": "New York",
+            "PostCode": "10001",
+            "BloodGroup": "O+",
+            "Genotype": "AA",
+            "Occupation": "Engineer",
+            "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d"
+        },
+        {
+            "ID": "D002",
+            "FirstName": "Jane",
+            "LastName": "Smith",
+            "Email": "jane.smith@example.com",
+            "DateOfBirth": "1990-03-22",
+            "Title": "Ms.",
+            "PhoneNumber": "+0987654321",
+            "CityTownOfResidence": "Los Angeles",
+            "PostCode": "90001",
+            "BloodGroup": "A+",
+            "Genotype": "AS",
+            "Occupation": "Doctor",
+            "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d"
+        },
+        {
+            "ID": "D003",
+            "FirstName": "Michael",
+            "LastName": "Johnson",
+            "Email": "michael.johnson@example.com",
+            "DateOfBirth": "1975-11-30",
+            "Title": "Mr.",
+            "PhoneNumber": "+1122334455",
+            "CityTownOfResidence": "Chicago",
+            "PostCode": "60601",
+            "BloodGroup": "B+",
+            "Genotype": "AC",
+            "Occupation": "Teacher",
+            "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d"
+        },
+        {
+            "ID": "D004",
+            "FirstName": "Emily",
+            "LastName": "Davis",
+            "Email": "emily.davis@example.com",
+            "DateOfBirth": "1988-05-15",
+            "Title": "Mrs.",
+            "PhoneNumber": "+2233445566",
+            "CityTownOfResidence": "Houston",
+            "PostCode": "77001",
+            "BloodGroup": "AB+",
+            "Genotype": "AA",
+            "Occupation": "Nurse",
+            "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d"
+        },
+        {
+            "ID": "D005",
+            "FirstName": "David",
+            "LastName": "Wilson",
+            "Email": "david.wilson@example.com",
+            "DateOfBirth": "1982-08-20",
+            "Title": "Mr.",
+            "PhoneNumber": "+3344556677",
+            "CityTownOfResidence": "Phoenix",
+            "PostCode": "85001",
+            "BloodGroup": "O-",
+            "Genotype": "SS",
+            "Occupation": "Lawyer",
+            "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d"
+        }
+    ]
+}
+

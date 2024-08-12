@@ -1,0 +1,28 @@
+{
+    "data": [
+        {
+            "ID": "AN001",
+            "Body": "We are excited to announce the launch of our new product next month.",
+            "Title": "New Product Launch",
+            "Announcer": "John Doe"
+        },
+        {
+            "ID": "AN002",
+            "Body": "Please be informed that the office will be closed on Friday for maintenance work.",
+            "Title": "Office Closure Notice",
+            "Announcer": "Jane Smith"
+        },
+        {
+            "ID": "AN003",
+            "Body": "Our annual company retreat is scheduled for the first weekend of November.",
+            "Title": "Annual Company Retreat",
+            "Announcer": "Alice Johnson"
+        },
+        {
+            "ID": "AN004",
+            "Body": "The company's quarterly earnings will be released next Monday.",
+            "Title": "Quarterly Earnings Announcement",
+            "Announcer": "Mark Thompson"
+        }
+    ]
+}
