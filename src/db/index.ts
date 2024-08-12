@@ -9,7 +9,7 @@ class Database {
 
   //read json file
   private async readJsonFile(fileName: string) {
-    const filePath = `./src/db/tables/${fileName}.json`;
+    const filePath = `./src/db/tables/${fileName.toLowerCase()}.json`;
     const fileContent = await Bun.file(filePath).text();
     const fileData = JSON.parse(fileContent);
     return fileData.data;
@@ -101,9 +101,9 @@ class Database {
 
 //insert INTO
   async insertINTO(table:string,values:GenericObject){ 
-    const data = await this.readJsonFile(table);
+    const data = await this.readJsonFile(table.toLowerCase());
     data.push(values)
-    await write(`./src/db/tables/${table}.json`,JSON.stringify({data:data},null,4))
+    await write(`./src/db/tables/${table.toLowerCase()}.json`,JSON.stringify({data:data},null,4))
   }
 
 }
