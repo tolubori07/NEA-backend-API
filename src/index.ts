@@ -11,7 +11,11 @@ import { Event } from "./db/Schemas/event";
 
 
 const port = process.env.PORT
-
+const CORS_HEADERS = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'OPTIONS, POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
+};
 const app = new Server()
 
 app.get('/', () => {
@@ -60,16 +64,14 @@ app.post("/dlogin", async (req: Request) => {
         bloodgroup: donor.BloodGroup,
         genotype: donor.Genotype,
         occupation: donor.Occupation,
-      });
-      res.headers.set('Access-Control-Allow-Origin', '*');
-      res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      },{status:200,headers:CORS_HEADERS});
       return res
     } else {
       return new Response("Incorrect Password", { status: 400 });
     }
   } catch (error) {
     console.error("Error during login:", error);
-    return new Response("Invalid request body", { status: 400 });
+    return new Response("Invalid request body", { status: 400 ,headers:CORS_HEADERS});
   }
 });
 
@@ -83,9 +85,7 @@ app.post("/appointments", async (req: Request) => {
     }
     const appointmemnt = await Appointment.create(date, time, centre, donor.ID)
     await db.insertINTO('appointments', appointmemnt)
-    const res = Response.json(appointmemnt, { status: 201 })
-    res.headers.set('Access-Control-Allow-Origin', '*');
-    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    const res = Response.json(appointmemnt, { status: 201,headers:CORS_HEADERS})
     return res
   } else {
     return new Response("Not Authorised", { status: 401 })
@@ -100,7 +100,7 @@ app.get("/appointments", async (req: Request) => {
     if (JSON.stringify(query) === '[]') {
       return new Response("You have no appointments", { status: 200 })
     }
-    return Response.json(query, { status: 200 })
+    return Response.json(query, { status: 200,headers:CORS_HEADERS })
   }
 })
 
@@ -137,7 +137,7 @@ app.post("/vlogin", async (req: Request) => {
         occupation: volunteer.Occupation,
         admin: volunteer.Admin,
         service: volunteer.ServiceOffered
-      });
+      },{status:200, headers:CORS_HEADERS});
     } else {
       return new Response("Incorrect Password", { status: 400 });
     }
@@ -157,7 +157,7 @@ app.post("/events", async (req: Request) => {
     }
     const event = await Event.create(name, location, address, postcode, date, start_time, end_time, target)
     await db.insertINTO('events', event)
-    return Response.json(event, { status: 201 })
+    return Response.json(event, { status: 201,headers:CORS_HEADERS })
   } else {
     return new Response("Not authorised", { status: 400 })
   }
@@ -168,7 +168,7 @@ app.get("/events", async (req: Request) => {
   if (volunteer) {
     const query = (await db.select(['*'], 'Events'))
     if (JSON.stringify(query) === '[]') {
-      return new Response("There are no events", { status: 200 })
+      return new Response("There are no events", { status: 200 ,headers:CORS_HEADERS})
     }
     return Response.json(query, { status: 200 })
   } else {
