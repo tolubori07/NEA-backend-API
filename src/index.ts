@@ -46,7 +46,7 @@ app.post("/dlogin", async (req: Request) => {
     const isPasswordCorrect = sha256.verify(password, donor.Password);
 
     if (isPasswordCorrect) {
-      return Response.json({
+      const res = Response.json({
         token: generateToken(donor.ID),
         id: donor.ID,
         firstname: donor.FirstName,
@@ -61,6 +61,9 @@ app.post("/dlogin", async (req: Request) => {
         genotype: donor.Genotype,
         occupation: donor.Occupation,
       });
+      res.headers.set('Access-Control-Allow-Origin', '*');
+      res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      return res
     } else {
       return new Response("Incorrect Password", { status: 400 });
     }
@@ -80,7 +83,10 @@ app.post("/appointments", async (req: Request) => {
     }
     const appointmemnt = await Appointment.create(date, time, centre, donor.ID)
     await db.insertINTO('appointments', appointmemnt)
-    return Response.json(appointmemnt, { status: 201 })
+    const res = Response.json(appointmemnt, { status: 201 })
+    res.headers.set('Access-Control-Allow-Origin', '*');
+    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    return res
   } else {
     return new Response("Not Authorised", { status: 401 })
   }
@@ -142,33 +148,33 @@ app.post("/vlogin", async (req: Request) => {
 });
 
 
-app.post("/events", async(req:Request)=>{ 
-  const volunteer:Volunteer = await protect(req)
-  if(volunteer && volunteer.Admin === true){
-    const {name,location,address,postcode,date,start_time,end_time,target} = await parseBody(req)
-    if(!name || !location || !address || !postcode || !date || !start_time || !end_time || !target){ 
-      return new Response("Please fill in all details",{status:400})
+app.post("/events", async (req: Request) => {
+  const volunteer: Volunteer = await protect(req)
+  if (volunteer && volunteer.Admin === true) {
+    const { name, location, address, postcode, date, start_time, end_time, target } = await parseBody(req)
+    if (!name || !location || !address || !postcode || !date || !start_time || !end_time || !target) {
+      return new Response("Please fill in all details", { status: 400 })
     }
-    const event = await Event.create(name,location,address,postcode,date,start_time,end_time,target)
-    await db.insertINTO('events',event)
-    return Response.json(event,{status:201})
-  } else{ 
-    return new Response("Not authorised",{status:400})
+    const event = await Event.create(name, location, address, postcode, date, start_time, end_time, target)
+    await db.insertINTO('events', event)
+    return Response.json(event, { status: 201 })
+  } else {
+    return new Response("Not authorised", { status: 400 })
   }
 })
 
-app.get("/events", async(req:Request)=>{ 
- const volunteer: Volunteer = await protect(req)
+app.get("/events", async (req: Request) => {
+  const volunteer: Volunteer = await protect(req)
   if (volunteer) {
     const query = (await db.select(['*'], 'Events'))
     if (JSON.stringify(query) === '[]') {
       return new Response("There are no events", { status: 200 })
     }
     return Response.json(query, { status: 200 })
-  }else{ 
-    return new Response("Not authorised",{status:401})
+  } else {
+    return new Response("Not authorised", { status: 401 })
   }
- 
+
 })
 
 //@ts-ignore
