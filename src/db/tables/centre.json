@@ -4,25 +4,29 @@
       "ID": "C001",
       "Address": "123 Main Street, Springfield",
       "Postcode": "SP1 2AB",
-      "Name": "Springfield Health Centre"
+      "Name": "Springfield Health Centre",
+      "City": "Springfield"
     },
     {
       "ID": "C002",
       "Address": "456 Oak Avenue, Riverdale",
       "Postcode": "RD3 4XY",
-      "Name": "Riverdale Wellness Clinic"
+      "Name": "Riverdale Wellness Clinic",
+      "City": "Riverdale"
     },
     {
       "ID": "C003",
       "Address": "789 Pine Road, Greendale",
       "Postcode": "GD5 6ZW",
-      "Name": "Greendale Community Health Centre"
+      "Name": "Greendale Community Health Centre",
+      "City": "Greendale"
     },
     {
       "ID": "C004",
       "Address": "321 Birch Lane, Brookfield",
       "Postcode": "BF7 8YH",
-      "Name": "Brookfield Medical Centre"
+      "Name": "Brookfield Medical Centre",
+      "City": "Brookfield"
     }
   ]
 }

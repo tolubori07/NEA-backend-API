@@ -1,6 +1,8 @@
 import { write } from "bun";
 import { binarySearch } from "../algorithms/BinarySearch";
 import type { GenericObject } from '../types'
+import { quickSort } from "../algorithms/Quicksort";
+import { readJsonFile } from "../utils/readJsonFile";
 
 class Database {
   private query: GenericObject[] = [];
@@ -36,7 +38,7 @@ class Database {
   //select required fields
   async select(fields: string[], from: string): Promise<this> {
     try {
-      const data = await this.readJsonFile(from);
+      const data = await readJsonFile(from);
 
       if (data && Array.isArray(data)) {
         if (fields.length === 1 && fields[0] === "*") {
@@ -92,10 +94,11 @@ class Database {
 
   //where
   where(key: string, target: any): GenericObject[] {
-    // Find all occurrences using the findAllOccurences method
+    // Filter the current query results based on the key and target
     this.query = this.findAllOccurences(this.query, key, target);
-    return this.query;  // Return `this` for chaining
-  }
+    return this.query;  // Return the filtered results
+}
+
 
 
 
@@ -104,6 +107,11 @@ class Database {
     const data = await this.readJsonFile(table.toLowerCase());
     data.push(values)
     await write(`./src/db/tables/${table.toLowerCase()}.json`,JSON.stringify({data:data},null,4))
+  }
+
+  orderBy(by:string){ 
+    this.query = quickSort(this.query,by)
+    return this
   }
 
 }
