@@ -4,7 +4,6 @@ import { quickSort } from "../Quicksort";
 export const binarySearch = (list: GenericObject[], field: string, target: any): number => {
   let left: number = 0;
   let right: number = list.length - 1;
-  list = quickSort(list,field)
 
   while (left <= right) {
     const mid: number = Math.floor((left + right) / 2);

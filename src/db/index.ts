@@ -69,6 +69,7 @@ class Database {
   //find all occurences; used in where method
     private findAllOccurences = (list: GenericObject[], field: string, target: any): GenericObject[] => {
     // Use binarySearch to find the index of one occurrence
+    list = quickSort(list,field)
     const index = binarySearch(list, field, target);
     if (index === -1) return [];
 

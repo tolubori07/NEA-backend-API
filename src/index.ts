@@ -52,6 +52,11 @@ app.options("/events", (req: Request) => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
 
+app.options("/search", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
 
 app.post("/dlogin", async (req: Request) => {
   // Apply CORS middleware
@@ -125,7 +130,7 @@ app.get("/appointments", async (req: Request) => {
       }
 
       const res: GenericObject[] = await Promise.all(
-        query.map(async (appointment:AppointmentType) => {
+        query.map(async (appointment: AppointmentType) => {
           const donationCentre = await db.findOne('Centre', 'ID', appointment.Donation_Centre);
 
           return {
@@ -148,28 +153,28 @@ app.get("/appointments", async (req: Request) => {
   }
 });
 
-app.get('/nextAppointment', async(req:Request)=>{ 
-  try{ 
+app.get('/nextAppointment', async (req: Request) => {
+  try {
     const donor = await protect(req)
-    if(donor){ 
+    if (donor) {
       console.log(donor)
-      const query = (await db.select(['*'],'Appointments'))
-                        .where('Donor',donor.ID)
+      const query = (await db.select(['*'], 'Appointments'))
+        .where('Donor', donor.ID)
       const appointment = query[0];
       console.table(appointment)
-      const donationcentre = await db.findOne('Centre','ID',appointment.Donation_Centre);                 
+      const donationcentre = await db.findOne('Centre', 'ID', appointment.Donation_Centre);
       console.log(donationcentre)
       return Response.json({
         ID: appointment.ID,
         Date: appointment.Date,
-        Donation_Centre:donationcentre,
+        Donation_Centre: donationcentre,
         Donor: appointment.Donor,
         Time: appointment.Time
-      },{status:200,headers:CORS_HEADERS})
+      }, { status: 200, headers: CORS_HEADERS })
     }
-  }catch(error){ 
+  } catch (error) {
     console.error(error)
-  } 
+  }
 })
 
 app.post("/vlogin", async (req: Request) => {
@@ -245,14 +250,11 @@ app.get("/events", async (req: Request) => {
 })
 
 
-app.post('/search',async(req:Request)=>{ 
-  const donor = await protect(req)
-  const {city} = await parseBody(req)
-  if(donor){
-  const query = (await db.select(['*'],'Centre'))
-                 .where('City',city)
-  return Response.json(query,{status:200,headers:CORS_HEADERS})
-  }
+app.post('/search', async (req: Request) => {
+  const { city } = await parseBody(req)
+  const query = (await db.select(['*'], 'Centre'))
+    .where('City', city)
+  return Response.json(query, { status: 200, headers: CORS_HEADERS })
 })
 //@ts-ignore
 app.listen(port)

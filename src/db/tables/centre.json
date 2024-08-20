@@ -27,6 +27,20 @@
       "Postcode": "BF7 8YH",
       "Name": "Brookfield Medical Centre",
       "City": "Brookfield"
+    },
+    {
+      "ID": "C005",
+      "Address": "421 Birch Lane, Bramwood",
+      "Postcode": "BM8 9WB",
+      "Name": "Bramwood Medical Centre",
+      "City": "Bramwood"
+    },
+    {
+      "ID": "C006",
+      "Address": "1 vinter street, Bramwood",
+      "Postcode": "BM12 2WB",
+      "Name": "Bramwood Blood Centre",
+      "City": "Bramwood"
     }
   ]
 }
