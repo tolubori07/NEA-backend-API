@@ -22,12 +22,13 @@ class Database {
     Bun.write(`./src/db/tables/${name}.json`, JSON.stringify({ fields: fields, data: [] }, null, 4));
   }
 
-//findone record only
+  //findone record only
   async findOne(from: string, key: string, target: any): Promise<GenericObject | undefined> {
     try {
-      const data = await this.readJsonFile(from);
+      const data = await readJsonFile(from);
       //@ts-ignore
-      return data[binarySearch(data, key, target)]
+      const list = quickSort(data, key)
+      return data[binarySearch(list, key, target)]
     } catch (error) {
       console.error(error);
       return undefined;
@@ -67,9 +68,9 @@ class Database {
   }
 
   //find all occurences; used in where method
-    private findAllOccurences = (list: GenericObject[], field: string, target: any): GenericObject[] => {
+  private findAllOccurences = (list: GenericObject[], field: string, target: any): GenericObject[] => {
     // Use binarySearch to find the index of one occurrence
-    list = quickSort(list,field)
+    list = quickSort(list, field)
     const index = binarySearch(list, field, target);
     if (index === -1) return [];
 
@@ -94,24 +95,25 @@ class Database {
 
 
   //where
-  where(key: string, target: any): GenericObject[] {
+  where(key: string, target: any) {
     // Filter the current query results based on the key and target
     this.query = this.findAllOccurences(this.query, key, target);
-    return this.query;  // Return the filtered results
-}
-
-
-
-
-//insert INTO
-  async insertINTO(table:string,values:GenericObject){ 
-    const data = await this.readJsonFile(table.toLowerCase());
-    data.push(values)
-    await write(`./src/db/tables/${table.toLowerCase()}.json`,JSON.stringify({data:data},null,4))
+    return this;  // Return the filtered results
+  }
+  
+  getResults(): GenericObject[] {
+    return this.query;
   }
 
-  orderBy(by:string){ 
-    this.query = quickSort(this.query,by)
+  //insert INTO
+  async insertINTO(table: string, values: GenericObject) {
+    const data = await this.readJsonFile(table.toLowerCase());
+    data.push(values)
+    await write(`./src/db/tables/${table.toLowerCase()}.json`, JSON.stringify({ data: data }, null, 4))
+  }
+
+  orderBy(by: string) {
+    this.query = quickSort(this.query, by)
     return this
   }
 

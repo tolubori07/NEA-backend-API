@@ -31,6 +31,11 @@ app.options("/dlogin", (req: Request) => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
 
+app.options("/availableSlots", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
 app.options("/vlogin", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -53,6 +58,11 @@ app.options("/events", (req: Request) => {
 });
 
 app.options("/search", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
+app.options("/getcentre", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
@@ -123,7 +133,7 @@ app.get("/appointments", async (req: Request) => {
   try {
     const donor: Donor = await protect(req);
     if (donor) {
-      const query = (await db.select(['*'], 'Appointments')).where('Donor', donor.ID);
+      const query = (await db.select(['*'], 'Appointments')).where('Donor', donor.ID).getResults();
 
       if (query.length === 0) {
         return new Response("You have no appointments", { status: 200 });
@@ -159,7 +169,7 @@ app.get('/nextAppointment', async (req: Request) => {
     if (donor) {
       console.log(donor)
       const query = (await db.select(['*'], 'Appointments'))
-        .where('Donor', donor.ID)
+        .where('Donor', donor.ID).getResults()
       const appointment = query[0];
       console.table(appointment)
       const donationcentre = await db.findOne('Centre', 'ID', appointment.Donation_Centre);
@@ -254,7 +264,100 @@ app.post('/search', async (req: Request) => {
   const { city } = await parseBody(req)
   const query = (await db.select(['*'], 'Centre'))
     .where('City', city)
+    .getResults()
   return Response.json(query, { status: 200, headers: CORS_HEADERS })
 })
+
+
+app.get("/getcentre", async (req: Request) => {
+  try {
+    // Extracting ID from query parameters
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+
+    if (!id) {
+      return new Response("ID parameter is required", { status: 400, headers: CORS_HEADERS });
+    }
+
+    // Fetch the centre using the ID
+    const response = await db.findOne('centre', 'ID', id);
+
+    if (!response) {
+      return new Response("Centre not found", { status: 404, headers: CORS_HEADERS });
+    }
+
+    return Response.json(response, { status: 200, headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("Error fetching centre:", error);
+    return new Response("Internal Server Error", { status: 500, headers: CORS_HEADERS });
+  }
+})
+
+
+app.get("/availableSlots", async (req: Request) => {
+  try {
+    const url = new URL(req.url);
+    const date = url.searchParams.get('date');
+    const centreId = url.searchParams.get('id');
+
+    if (!date || !centreId) {
+      return new Response("Date and Centre ID are required", { status: 400, headers: CORS_HEADERS });
+    }
+
+    // Define centre's opening hours
+    const openingTime = 8; // 8 AM
+    const closingTime = 18; // 6 PM
+    const maxAppointmentsPerSlot = 5;
+
+    // Generate all possible time slots for the day (on the hour)
+    const allSlots: string[] = [];
+    for (let hour = openingTime; hour < closingTime; hour++) {
+      const hourStr = hour.toString().padStart(2, '0');
+      allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+
+    // Retrieve all appointments for the given date and centre
+    const appointments = (await db.select(['*'], 'Appointments'))
+      .where('Date', date)
+      .getResults();
+      console.log(appointments)
+      //.where('Donation_Centre', centreId)
+
+    console.log(appointments);
+
+    // Count appointments for each time slot
+    const bookedSlots: { [key: string]: number } = {};
+   for (const appointment of appointments) {
+  const preTime = new Date(appointment.Time);
+    const time = `${preTime.getUTCHours()}:0${preTime.getUTCMinutes()}`
+
+  if (bookedSlots[time]) {
+    // If the time slot already exists in bookedSlots, increment the count
+    bookedSlots[time]++;
+  } else {
+    // If the time slot doesn't exist yet, initialize it with a count of 1
+    bookedSlots[time] = 1;
+  }
+}
+    console.log(bookedSlots)
+
+    // Filter out fully booked slots
+    const availableSlots: string[] = [];
+    for (const slot of allSlots) {
+      if (!bookedSlots[slot] || bookedSlots[slot] < maxAppointmentsPerSlot) {
+        availableSlots.push(slot);
+      }
+    }
+
+    return Response.json(availableSlots, { status: 200, headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("Error fetching available slots:", error);
+    return new Response("Internal Server Error", { status: 500, headers: CORS_HEADERS });
+  }
+});
+
+
+
+
 //@ts-ignore
 app.listen(port)
