@@ -100,7 +100,7 @@ class Database {
     this.query = this.findAllOccurences(this.query, key, target);
     return this;  // Return the filtered results
   }
-  
+
   getResults(): GenericObject[] {
     return this.query;
   }

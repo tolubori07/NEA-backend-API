@@ -133,7 +133,7 @@ app.get("/appointments", async (req: Request) => {
   try {
     const donor: Donor = await protect(req);
     if (donor) {
-      const query = (await db.select(['*'], 'Appointments')).where('Donor', donor.ID).getResults();
+      const query = (await db.select(['*'], 'Appointments')).where('Donor', donor.ID).orderBy('Date').getResults();
 
       if (query.length === 0) {
         return new Response("You have no appointments", { status: 200 });
@@ -169,7 +169,7 @@ app.get('/nextAppointment', async (req: Request) => {
     if (donor) {
       console.log(donor)
       const query = (await db.select(['*'], 'Appointments'))
-        .where('Donor', donor.ID).getResults()
+        .where('Donor', donor.ID).orderBy('Date').getResults()
       const appointment = query[0];
       console.table(appointment)
       const donationcentre = await db.findOne('Centre', 'ID', appointment.Donation_Centre);
@@ -320,25 +320,25 @@ app.get("/availableSlots", async (req: Request) => {
     const appointments = (await db.select(['*'], 'Appointments'))
       .where('Date', date)
       .getResults();
-      console.log(appointments)
-      //.where('Donation_Centre', centreId)
+    console.log(appointments)
+    //.where('Donation_Centre', centreId)
 
     console.log(appointments);
 
     // Count appointments for each time slot
     const bookedSlots: { [key: string]: number } = {};
-   for (const appointment of appointments) {
-  const preTime = new Date(appointment.Time);
-    const time = `${preTime.getUTCHours()}:0${preTime.getUTCMinutes()}`
+    for (const appointment of appointments) {
+      const preTime = new Date(appointment.Time);
+      const time = `${preTime.getUTCHours()}:0${preTime.getUTCMinutes()}`
 
-  if (bookedSlots[time]) {
-    // If the time slot already exists in bookedSlots, increment the count
-    bookedSlots[time]++;
-  } else {
-    // If the time slot doesn't exist yet, initialize it with a count of 1
-    bookedSlots[time] = 1;
-  }
-}
+      if (bookedSlots[time]) {
+        // If the time slot already exists in bookedSlots, increment the count
+        bookedSlots[time]++;
+      } else {
+        // If the time slot doesn't exist yet, initialize it with a count of 1
+        bookedSlots[time] = 1;
+      }
+    }
     console.log(bookedSlots)
 
     // Filter out fully booked slots
