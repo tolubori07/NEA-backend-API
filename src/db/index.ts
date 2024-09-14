@@ -1,6 +1,6 @@
 import { write } from "bun";
 import { binarySearch } from "../algorithms/BinarySearch";
-import type { GenericObject } from '../types'
+import type { GenericObject } from "../types";
 import { quickSort } from "../algorithms/Quicksort";
 import { readJsonFile } from "../utils/readJsonFile";
 
@@ -19,22 +19,39 @@ class Database {
 
   //create table
   createTable(name: string, fields: string[]): void {
-    Bun.write(`./src/db/tables/${name}.json`, JSON.stringify({ fields: fields, data: [] }, null, 4));
+    Bun.write(
+      `./src/db/tables/${name}.json`,
+      JSON.stringify({ fields: fields, data: [] }, null, 4),
+    );
   }
 
   //findone record only
-  async findOne(from: string, key: string, target: any): Promise<GenericObject | undefined> {
+  // Improved findOne function
+
+  async findOne(from: string, key: string, target: any) {
     try {
-      const data = await readJsonFile(from);
-      //@ts-ignore
-      const list = quickSort(data, key)
-      return data[binarySearch(list, key, target)]
+      // Read the JSON file and parse it into an array of objects
+      const data: GenericObject[] = await readJsonFile(from);
+
+      // Sort the data based on the specified key
+      const sortedList = quickSort(data, key);
+
+      // Perform binary search on the sorted list
+      const index = binarySearch(sortedList, key, target);
+
+      // If a valid index is found, return the corresponding object
+      if (index !== -1) {
+        console.table(sortedList[index]);
+        return sortedList[index];
+      } else {
+        console.log("Item not found.");
+        return undefined;
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error in findOne:", error);
       return undefined;
     }
   }
-
 
   //select required fields
   async select(fields: string[], from: string): Promise<this> {
@@ -51,7 +68,9 @@ class Database {
               if (row.hasOwnProperty(field)) {
                 selectedRow[field] = row[field];
               } else {
-                throw new Error(`Property ${field} does not exist in table ${from}`);
+                throw new Error(
+                  `Property ${field} does not exist in table ${from}`,
+                );
               }
             }
             return selectedRow;
@@ -64,14 +83,19 @@ class Database {
       console.error(`Error selecting data from table: ${from}`, error);
       this.query = [];
     }
-    return this;  // Return this for chaining
+    return this; // Return this for chaining
   }
 
   //find all occurences; used in where method
-  private findAllOccurences = (list: GenericObject[], field: string, target: any): GenericObject[] => {
+  private findAllOccurences = (
+    list: GenericObject[],
+    field: string,
+    target: any,
+  ): GenericObject[] => {
     // Use binarySearch to find the index of one occurrence
-    list = quickSort(list, field)
+    list = quickSort(list, field);
     const index = binarySearch(list, field, target);
+
     if (index === -1) return [];
 
     const results: GenericObject[] = [];
@@ -91,14 +115,13 @@ class Database {
     }
 
     return results;
-  }
-
+  };
 
   //where
   where(key: string, target: any) {
     // Filter the current query results based on the key and target
     this.query = this.findAllOccurences(this.query, key, target);
-    return this;  // Return the filtered results
+    return this; // Return the filtered results
   }
 
   getResults(): GenericObject[] {
@@ -108,15 +131,37 @@ class Database {
   //insert INTO
   async insertINTO(table: string, values: GenericObject) {
     const data = await this.readJsonFile(table.toLowerCase());
-    data.push(values)
-    await write(`./src/db/tables/${table.toLowerCase()}.json`, JSON.stringify({ data: data }, null, 4))
+    data.push(values);
+    await write(
+      `./src/db/tables/${table.toLowerCase()}.json`,
+      JSON.stringify({ data: data }, null, 4),
+    );
   }
 
   orderBy(by: string) {
-    this.query = quickSort(this.query, by)
-    return this
+    this.query = quickSort(this.query, by);
+    return this;
   }
 
-}
+  async update(
+    table: string,
+    key: string,
+    target: string,
+    fields: string[],
+    newVals: any[],
+  ) {
+    let data = await this.readJsonFile(table);
+    const index = binarySearch(data, key, target);
+    if (index === -1) return null;
 
+    fields.forEach((field, i) => {
+      data[index][field] = newVals[i];
+    });
+
+    console.log(index);
+    console.log(data[index]);
+    await write(`./src/db/tables/${table.toLocaleLowerCase()}.json`, JSON.stringify({ data: data }, null, 4));
+    return this;
+  }
+}
 export default Database;

@@ -1,5 +1,5 @@
 import type { GenericObject } from "../../types";
-import { quickSort } from "../Quicksort";
+
 
 export const binarySearch = (list: GenericObject[], field: string, target: any): number => {
   let left: number = 0;
