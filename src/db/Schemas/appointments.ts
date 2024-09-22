@@ -31,8 +31,9 @@ class Appointment implements AppointmentType {
 
   // Method to generate the ID based on the current list of appointments
   private static async generateID(): Promise<string> {
-    const list = await readJsonFile('appointments');
-    const nextID = list.length + 1;
+    const list = await Bun.file("./src/db/tables/appointments.json").text();
+    const listData = JSON.parse(list)
+    const nextID = listData.ID_Count + 1;
     if (nextID < 10) {
       return `A00${nextID}`;
     } else if (nextID < 100) {

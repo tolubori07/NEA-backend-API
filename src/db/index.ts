@@ -7,32 +7,24 @@ import { readJsonFile } from "../utils/readJsonFile";
 class Database {
   private query: GenericObject[] = [];
 
-  constructor() { }
-
-  //read json file
-  private async readJsonFile(fileName: string) {
-    const filePath = `./src/db/tables/${fileName.toLowerCase()}.json`;
-    const fileContent = await Bun.file(filePath).text();
-    const fileData = JSON.parse(fileContent);
-    return fileData.data;
-  }
+  constructor() {}
 
   //create table
-  createTable(name: string, fields: string[]): void {
+  createTable(name: string): void {
     Bun.write(
       `./src/db/tables/${name}.json`,
-      JSON.stringify({ fields: fields, data: [] }, null, 4),
+      JSON.stringify({ ID_Count: 0, data: [] }, null, 4),
     );
   }
 
   //findone record only
-  // Improved findOne function
 
   async findOne(from: string, key: string, target: any) {
     try {
       // Read the JSON file and parse it into an array of objects
-      const data: GenericObject[] = await readJsonFile(from);
-
+      const file = await readJsonFile(from);
+      const data = file.data;
+      console.log(data)
       // Sort the data based on the specified key
       const sortedList = quickSort(data, key);
 
@@ -41,10 +33,8 @@ class Database {
 
       // If a valid index is found, return the corresponding object
       if (index !== -1) {
-        console.table(sortedList[index]);
-        return sortedList[index];
+        return sortedList[index]; // Return from sortedList, not data
       } else {
-        console.log("Item not found.");
         return undefined;
       }
     } catch (error) {
@@ -56,7 +46,8 @@ class Database {
   //select required fields
   async select(fields: string[], from: string): Promise<this> {
     try {
-      const data = await readJsonFile(from);
+      const file = await readJsonFile(from);
+      const data = file.data;
 
       if (data && Array.isArray(data)) {
         if (fields.length === 1 && fields[0] === "*") {
@@ -99,7 +90,6 @@ class Database {
     if (index === -1) return [];
 
     const results: GenericObject[] = [];
-
     // Collect all occurrences to the left of the found index
     let i = index;
     while (i >= 0 && list[i][field] === target) {
@@ -130,11 +120,15 @@ class Database {
 
   //insert INTO
   async insertINTO(table: string, values: GenericObject) {
-    const data = await this.readJsonFile(table.toLowerCase());
-    data.push(values);
+    const jsonData = await readJsonFile(table.toLowerCase());
+
+    // Increment ID count and assign new ID
+    jsonData.ID_Count += 1;
+    jsonData.data.push(values);
+
     await write(
       `./src/db/tables/${table.toLowerCase()}.json`,
-      JSON.stringify({ data: data }, null, 4),
+      JSON.stringify(jsonData, null, 4),
     );
   }
 
@@ -150,18 +144,32 @@ class Database {
     fields: string[],
     newVals: any[],
   ) {
-    let data = await this.readJsonFile(table);
+    let file = await readJsonFile(table);
+    const data = file.data;
     const index = binarySearch(data, key, target);
     if (index === -1) return null;
-
-    fields.forEach((field, i) => {
+    const Nfields = fields;
+    Nfields.forEach((field, i) => {
       data[index][field] = newVals[i];
     });
 
-    console.log(index);
-    console.log(data[index]);
-    await write(`./src/db/tables/${table.toLocaleLowerCase()}.json`, JSON.stringify({ data: data }, null, 4));
+    await write(
+      `./src/db/tables/${table.toLocaleLowerCase()}.json`,
+      JSON.stringify({ data: data }, null, 4),
+    );
     return this;
+  }
+
+  async delete(table: string, key: string, target: string) {
+    let file = await readJsonFile(table);
+    const data = file.data;
+    const index = binarySearch(data, key, target);
+    if (index === -1) return null;
+    data.splice(index, 1);
+    await write(
+      `./src/db/tables/${table.toLowerCase()}.json`,
+      JSON.stringify({ data: data }, null, 4),
+    );
   }
 }
 export default Database;

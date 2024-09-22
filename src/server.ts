@@ -2,7 +2,11 @@ import { serve } from "bun";
 
 // Define types for handler and middleware functions
 type Handler = (req: Request, ctx: any) => Response | Promise<Response>;
-type Middleware = (req: Request, ctx: any, next: () => Promise<Response | void>) => Promise<Response | void> | void;
+type Middleware = (
+  req: Request,
+  ctx: any,
+  next: () => Promise<Response | void>,
+) => Promise<Response | void> | void;
 
 class Server {
   private routes: { [method: string]: { [path: string]: Handler } };
@@ -14,7 +18,7 @@ class Server {
       POST: {},
       PUT: {},
       DELETE: {},
-      OPTIONS: {}
+      OPTIONS: {},
     };
     this.middlewares = [];
   }
@@ -28,7 +32,7 @@ class Server {
   listen(port: number) {
     serve({
       port: port,
-      fetch: this.handleRequest.bind(this)
+      fetch: this.handleRequest.bind(this),
     });
     console.log(`Server started on port ${port}`);
   }
@@ -56,7 +60,9 @@ class Server {
         }
 
         if (!nextCalled) {
-          return new Response("Middleware did not call next()", { status: 500 });
+          return new Response("Middleware did not call next()", {
+            status: 500,
+          });
         }
       }
 
@@ -83,15 +89,8 @@ class Server {
   delete(path: string, handler: Handler) {
     this.routes.DELETE[path] = handler;
   }
-options(path: string, handler: Handler) {
+  options(path: string, handler: Handler) {
     this.routes.OPTIONS[path] = handler;
   }
-
 }
-export default Server
-
-// Example CORS middleware
-// Example usage
-
-// Example route
-
+export default Server;

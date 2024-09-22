@@ -3,14 +3,14 @@ import db from "./db";
 import parseBody from "./utils/parseBody";
 import sha256 from "./algorithms/sha-256";
 import { Donor } from "./db/Schemas/donors";
-import { Volunteer, type VolunteerType } from "./db/Schemas/volunteer";
+import { Volunteer } from "./db/Schemas/volunteer";
 import { generateToken } from "./utils/generatetoken";
 import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
 
-const port = process.env.PORT;
+const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
   "Access-Control-Allow-Origin": "http://localhost:5173", // Instead of '*'
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
@@ -44,6 +44,12 @@ app.options("/appointments", (req: Request) => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
 
+app.options("/appointment", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
+
 app.options("/nextAppointment", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -60,6 +66,16 @@ app.options("/search", (req: Request) => {
 });
 
 app.options("/getcentre", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
+app.options("/rescheduleappointment", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
+app.options("/cancelappointment", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
@@ -117,7 +133,7 @@ app.post("/dlogin", async (req: Request) => {
     }
     //if the password doesn't match we return an error messag along with a status code
     else {
-      return new Response("Incorrect Password", { status: 400 });
+      return new Response("Incorrect Password", { status: 401 });
     }
     //if an error occurs then return error during login
   } catch (error) {
@@ -177,6 +193,7 @@ app.get("/appointments", async (req: Request) => {
       // initialise a result variable
       const res: GenericObject[] = await Promise.all(
         //loop through the array list of appointments and find which appointment centres match which donationn centre id in the appointment centre and return the donation centre object to the element in the list
+        //@ts-ignore
         query.map(async (appointment: AppointmentType) => {
           const donationCentre = await db.findOne(
             "Centre",
@@ -206,6 +223,7 @@ app.get("/appointments", async (req: Request) => {
 });
 
 //HTTP GET route to get the user's next appointment
+//@ts-ignore
 app.get("/nextAppointment", async (req: Request) => {
   //try to get the donor by decoding the donor ID from the bearer token in the header, this is also used as a method to protect the route
   try {
@@ -218,6 +236,42 @@ app.get("/nextAppointment", async (req: Request) => {
         .orderBy("Date")
         .getResults();
       const appointment = query[0];
+      //then find the donation centre for that appointment and add it to the response body
+      const donationcentre = await db.findOne(
+        "Centre",
+        "ID",
+        appointment.Donation_Centre,
+      );
+      return Response.json(
+        {
+          ID: appointment.ID,
+          Date: appointment.Date,
+          Donation_Centre: donationcentre,
+          Donor: appointment.Donor,
+          Time: appointment.Time,
+        },
+        { status: 200, headers: CORS_HEADERS },
+      );
+    }
+  } catch (error) {
+    //if there's an unexpected error, then we can return an error 500 for an internal server error
+    return new Response("Errror while fetching appointment" + error, {
+      status: 500,
+    });
+  }
+});
+
+//@ts-ignore
+app.post("/appointment", async (req: Request) => {
+  //try to get the donor by decoding the donor ID from the bearer token in the header, this is also used as a method to protect the route
+  try {
+    const donor = await protect(req);
+    const { ID } = await parseBody(req);
+    //if the id is found in the header, we select all of the user's appointments
+    //then we order it by date and select the first appointment only as our response body
+    if (donor) {
+      const appointment = await db.findOne("appointments", "ID", ID);
+      console.log(appointment);
       //then find the donation centre for that appointment and add it to the response body
       const donationcentre = await db.findOne(
         "Centre",
@@ -458,13 +512,91 @@ app.get("/availableSlots", async (req: Request) => {
   }
 });
 
-app.put('/rescheduleappointment', async(req:Request)=>{
-    const field = ['Donor','Donation_Centre']
-    const value = ['D001','C001']
-    await db.update('appointments','ID','A001',field,value)
-    return Response.json((await db.select(['*'],'appointments')).getResults());
+//@ts-ignore
+app.put("/rescheduleappointment", async (req: Request) => {
+  try {
+    const donor: Donor = await protect(req);
+    if (!donor) {
+      return new Response("Unauthorised, Donor not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const { password, fields, values, appointment } = (await parseBody(
+      req,
+    )) as {
+      password: string;
+      fields: string[];
+      values: any[];
+      appointment: string;
+    };
+    const isPasswordCorrect: boolean = sha256.verify(password, donor.Password);
+    if (!isPasswordCorrect) {
+      return new Response("Oops, Incorrect Password", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await db.update("appointments", "ID", appointment, fields, values);
+
+    return new Response("Appointment rescheduled successfully", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error("Error rescheduling appointment:", error);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
-)
+});
+
+//@ts-ignore
+app.delete("/cancelappointment", async (req: Request) => {
+  try {
+    const donor: Donor = await protect(req);
+    if (!donor)
+      return new Response("Unauthorised, Donor not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    const { password, appointment_id } = await parseBody(req);
+    const isPasswordCorrect: boolean = sha256.verify(password, donor.Password);
+    if (!isPasswordCorrect) {
+      return new Response("Oops, Incorrect Password", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    const appointment: Appointment = await db.findOne(
+      "appointments",
+      "ID",
+      appointment_id,
+    );
+    if (appointment) {
+      await db.delete("appointments", "ID", appointment_id);
+    } else {
+      return new Response("That appointment doesn't exist", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+    return new Response("Appointment Deleted succefully", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error("An error occured");
+
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
 
 //@ts-ignore
 app.listen(port);
