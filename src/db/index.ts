@@ -7,7 +7,7 @@ import { readJsonFile } from "../utils/readJsonFile";
 class Database {
   private query: GenericObject[] = [];
 
-  constructor() {}
+  constructor() { }
 
   //create table
   createTable(name: string): void {
@@ -24,7 +24,6 @@ class Database {
       // Read the JSON file and parse it into an array of objects
       const file = await readJsonFile(from);
       const data = file.data;
-      console.log(data)
       // Sort the data based on the specified key
       const sortedList = quickSort(data, key);
 
@@ -163,12 +162,13 @@ class Database {
   async delete(table: string, key: string, target: string) {
     let file = await readJsonFile(table);
     const data = file.data;
+    const ID_Count = file.ID_Count;
     const index = binarySearch(data, key, target);
     if (index === -1) return null;
     data.splice(index, 1);
     await write(
       `./src/db/tables/${table.toLowerCase()}.json`,
-      JSON.stringify({ data: data }, null, 4),
+      JSON.stringify({ ID_Count: ID_Count, data: data }, null, 4),
     );
   }
 }

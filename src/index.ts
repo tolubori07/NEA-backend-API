@@ -49,7 +49,6 @@ app.options("/appointment", (req: Request) => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
 
-
 app.options("/nextAppointment", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -235,6 +234,9 @@ app.get("/nextAppointment", async (req: Request) => {
         .where("Donor", donor.ID)
         .orderBy("Date")
         .getResults();
+      if(query.length == 0){ 
+        return new Response("1", {status:200, headers:CORS_HEADERS})
+      }
       const appointment = query[0];
       //then find the donation centre for that appointment and add it to the response body
       const donationcentre = await db.findOne(
@@ -271,7 +273,6 @@ app.post("/appointment", async (req: Request) => {
     //then we order it by date and select the first appointment only as our response body
     if (donor) {
       const appointment = await db.findOne("appointments", "ID", ID);
-      console.log(appointment);
       //then find the donation centre for that appointment and add it to the response body
       const donationcentre = await db.findOne(
         "Centre",
@@ -557,46 +558,17 @@ app.put("/rescheduleappointment", async (req: Request) => {
 //@ts-ignore
 app.delete("/cancelappointment", async (req: Request) => {
   try {
-    const donor: Donor = await protect(req);
-    if (!donor)
-      return new Response("Unauthorised, Donor not verified", {
-        status: 401,
-        headers: CORS_HEADERS,
-      });
-    const { password, appointment_id } = await parseBody(req);
-    const isPasswordCorrect: boolean = sha256.verify(password, donor.Password);
-    if (!isPasswordCorrect) {
-      return new Response("Oops, Incorrect Password", {
-        status: 401,
-        headers: CORS_HEADERS,
-      });
-    }
-    const appointment: Appointment = await db.findOne(
-      "appointments",
-      "ID",
-      appointment_id,
-    );
-    if (appointment) {
-      await db.delete("appointments", "ID", appointment_id);
-    } else {
-      return new Response("That appointment doesn't exist", {
-        status: 400,
-        headers: CORS_HEADERS,
-      });
-    }
-    return new Response("Appointment Deleted succefully", {
-      status: 200,
-      headers: CORS_HEADERS,
-    });
-  } catch (error) {
-    console.error("An error occured");
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
 
-    return new Response("Internal Server Error", {
-      status: 500,
-      headers: CORS_HEADERS,
-    });
+    if(!id){
+      return new Response("No ID provided", {status:401, headers: CORS_HEADERS});
+    }
+    db.delete("appointments","ID",id)
+    return new Response("Appointments deleted", {status:200, headers: CORS_HEADERS});
+  } catch (error) {
+    console.error("An error occured", error);
   }
 });
-
 //@ts-ignore
 app.listen(port);
