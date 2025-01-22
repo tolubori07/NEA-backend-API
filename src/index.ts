@@ -9,6 +9,7 @@ import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
+import { parse } from "path";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -234,8 +235,8 @@ app.get("/nextAppointment", async (req: Request) => {
         .where("Donor", donor.ID)
         .orderBy("Date")
         .getResults();
-      if(query.length == 0){ 
-        return new Response("1", {status:200, headers:CORS_HEADERS})
+      if (query.length == 0) {
+        return new Response("1", { status: 200, headers: CORS_HEADERS });
       }
       const appointment = query[0];
       //then find the donation centre for that appointment and add it to the response body
@@ -561,11 +562,17 @@ app.delete("/cancelappointment", async (req: Request) => {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    if(!id){
-      return new Response("No ID provided", {status:401, headers: CORS_HEADERS});
+    if (!id) {
+      return new Response("No ID provided", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
     }
-    db.delete("appointments","ID",id)
-    return new Response("Appointments deleted", {status:200, headers: CORS_HEADERS});
+    db.delete("appointments", "ID", id);
+    return new Response("Appointments deleted", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
   } catch (error) {
     console.error("An error occured", error);
   }
