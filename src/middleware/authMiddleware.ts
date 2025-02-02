@@ -6,11 +6,11 @@ export const protect = async (req: Request) => {
 
   if (
     req.headers.get("authorization") &&
-    req.headers.get("authorization").startsWith("Bearer")
+    req.headers.get("authorization")?.startsWith("Bearer")
   ) {
     try {
       //get token from header
-      token = req.headers.get("authorization").split(" ")[1];
+      token = req.headers.get("authorization")?.split(" ")[1];
 
       //verify token
       const decoded = verify(token, process.env.JWT_SECRET);

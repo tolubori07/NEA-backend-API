@@ -2,7 +2,7 @@ import Server from "./server";
 import db from "./db";
 import parseBody from "./utils/parseBody";
 import sha256 from "./algorithms/sha-256";
-import { Donor } from "./db/Schemas/donors";
+import { Donor, DonorType } from "./db/Schemas/donors";
 import { Volunteer } from "./db/Schemas/volunteer";
 import { generateToken } from "./utils/generatetoken";
 import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
@@ -10,6 +10,8 @@ import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
 import { parse } from "path";
+import type { truncateSync } from "fs";
+import { password } from "bun";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -144,6 +146,82 @@ app.post("/dlogin", async (req: Request) => {
   }
 });
 
+//HTTP POST endpoint for creating Donors
+//@ts-ignore
+app.post("/dsignup", async (req: Request) => {
+  try {
+    const {
+      firstname,
+      lastname,
+      email,
+      DOB,
+      title,
+      phoneNumber,
+      city,
+      postcode,
+      bloodgroup,
+      genotype,
+      occupation,
+      password,
+    } = await parseBody(req);
+    const check = await db.findOne("Donors", "Email", email);
+    if (check) {
+      return new Response("Donor Already Exists", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (
+      !firstname ||
+      !lastname ||
+      !email ||
+      !DOB ||
+      !title ||
+      !phoneNumber ||
+      !city ||
+      !postcode ||
+      !bloodgroup ||
+      !genotype ||
+      !occupation ||
+      !password
+    ) {
+      return new Response("Please fill all fields", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    } else {
+      const hashedpassword = sha256.sign(password);
+      try {
+        const donor = await Donor.create(
+          firstname,
+          lastname,
+          email,
+          DOB,
+          title,
+          phoneNumber,
+          city,
+          postcode,
+          bloodgroup,
+          genotype,
+          occupation,
+          hashedpassword,
+        );
+        await db.insertINTO("donors", donor);
+        return Response.json(
+          { ...donor, token: generateToken(donor.ID) },
+          { status: 201, headers: CORS_HEADERS },
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  } catch (error) {
+    return new Response("Invalid request body" + error, {
+      status: 400,
+      headers: CORS_HEADERS,
+    });
+  }
+});
 //HTTP POST endpoint for creating appointments
 app.post("/appointments", async (req: Request) => {
   // protect the request by verifying the user and fetch the request user

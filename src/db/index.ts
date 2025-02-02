@@ -122,7 +122,7 @@ class Database {
     const jsonData = await readJsonFile(table.toLowerCase());
 
     // Increment ID count and assign new ID
-    jsonData.ID_Count += 1;
+    jsonData.IDX += 1;
     jsonData.data.push(values);
 
     await write(
@@ -162,13 +162,13 @@ class Database {
   async delete(table: string, key: string, target: string) {
     let file = await readJsonFile(table);
     const data = file.data;
-    const ID_Count = file.ID_Count;
+    const ID_Count = file.IDX;
     const index = binarySearch(data, key, target);
     if (index === -1) return null;
     data.splice(index, 1);
     await write(
       `./src/db/tables/${table.toLowerCase()}.json`,
-      JSON.stringify({ ID_Count: ID_Count, data: data }, null, 4),
+      JSON.stringify({ IDX: ID_Count, data: data }, null, 4),
     );
   }
 }

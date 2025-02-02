@@ -32,7 +32,7 @@ class Volunteer implements VolunteerType {
   Admin: boolean;
   ServiceOffered: string;
 
-  constructor(
+  private constructor(
     ID: string,
     First_Name: string,
     Last_Name: string,

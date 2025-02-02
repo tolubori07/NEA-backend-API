@@ -3,7 +3,7 @@ import { readJsonFile } from "../../utils/readJsonFile";
 interface AppointmentType {
   ID: string;
   Date: Date;
-  Time: string;  // Assuming time is in 'HH:MM' format
+  Time: string; // Assuming time is in 'HH:MM' format
   Donation_Centre: string;
   Donor: string;
 }
@@ -15,7 +15,13 @@ class Appointment implements AppointmentType {
   Donation_Centre: string;
   Donor: string;
 
-  private constructor(id: string, date: Date, time: string, donation_centre: string, donor: string) {
+  private constructor(
+    id: string,
+    date: Date,
+    time: string,
+    donation_centre: string,
+    donor: string,
+  ) {
     this.ID = id;
     this.Date = date;
     this.Time = time;
@@ -24,16 +30,20 @@ class Appointment implements AppointmentType {
   }
 
   // Factory method to create a new Appointment instance
-  static async create(date: Date, time: string, donation_centre: string, donor: string): Promise<Appointment> {
+  static async create(
+    date: Date,
+    time: string,
+    donation_centre: string,
+    donor: string,
+  ): Promise<Appointment> {
     const id = await this.generateID();
     return new Appointment(id, date, time, donation_centre, donor);
   }
 
   // Method to generate the ID based on the current list of appointments
   private static async generateID(): Promise<string> {
-    const list = await Bun.file("./src/db/tables/appointments.json").text();
-    const listData = JSON.parse(list)
-    const nextID = listData.ID_Count + 1;
+    const list = await readJsonFile("appointments");
+    const nextID = list.IDX + 1;
     if (nextID < 10) {
       return `A00${nextID}`;
     } else if (nextID < 100) {
@@ -45,4 +55,3 @@ class Appointment implements AppointmentType {
 }
 
 export { Appointment, type AppointmentType };
-
