@@ -2,16 +2,13 @@ import Server from "./server";
 import db from "./db";
 import parseBody from "./utils/parseBody";
 import sha256 from "./algorithms/sha-256";
-import { Donor, DonorType } from "./db/Schemas/donors";
+import { Donor } from "./db/Schemas/donors";
 import { Volunteer } from "./db/Schemas/volunteer";
 import { generateToken } from "./utils/generatetoken";
 import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
-import { parse } from "path";
-import type { truncateSync } from "fs";
-import { password } from "bun";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -23,7 +20,7 @@ const CORS_HEADERS = new Headers({
 const app = new Server();
 
 app.get("/", () => {
-  const file = Bun.file("./src/db/tables/donors.json");
+  const file = Bun.file("./src/dist/index.html");
   return new Response(file, { headers: CORS_HEADERS });
 });
 
@@ -82,6 +79,11 @@ app.options("/cancelappointment", (req: Request) => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
 
+app.options("/dsignup", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
 //HTTP POST verb endpoint for donor login
 app.post("/dlogin", async (req: Request) => {
   //Try to parse the email and password from the request body
@@ -95,9 +97,13 @@ app.post("/dlogin", async (req: Request) => {
       });
     }
 
-    //@ts-ignore
     // Initialise use the findone method to find a donor with the matching email
-    const donor: Donor = await db.findOne("Donors", "Email", email);
+    const donor: Donor = await db.findOne(
+      "Donors",
+      "Email",
+      email.toLowerCase(),
+    );
+    console.log(donor);
 
     //if we cannot find the donor in the table we return a  status code 400 for an invalid request
     if (!donor) {
@@ -195,7 +201,7 @@ app.post("/dsignup", async (req: Request) => {
         const donor = await Donor.create(
           firstname,
           lastname,
-          email,
+          email.toLowerCase(),
           DOB,
           title,
           phoneNumber,
@@ -208,7 +214,21 @@ app.post("/dsignup", async (req: Request) => {
         );
         await db.insertINTO("donors", donor);
         return Response.json(
-          { ...donor, token: generateToken(donor.ID) },
+          {
+            token: generateToken(donor.ID),
+            id: donor.ID,
+            firstname: donor.FirstName,
+            lastname: donor.LastName,
+            email: donor.Email,
+            dob: donor.DateOfBirth,
+            title: donor.Title,
+            phone: donor.PhoneNumber,
+            city: donor.Cityofresidence,
+            postcode: donor.PostCode,
+            bloodgroup: donor.BloodGroup,
+            genotype: donor.Genotype,
+            occupation: donor.Occupation,
+          },
           { status: 201, headers: CORS_HEADERS },
         );
       } catch (error) {
