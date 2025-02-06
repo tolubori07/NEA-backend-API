@@ -12,7 +12,7 @@ import type { GenericObject } from "./types";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
-  "Access-Control-Allow-Origin": "http://localhost:5173", // Instead of '*'
+  "Access-Control-Allow-Origin": "https://onehealthls.netlify.app", // Instead of '*'
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 });
