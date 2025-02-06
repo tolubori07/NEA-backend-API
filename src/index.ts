@@ -19,9 +19,9 @@ const CORS_HEADERS = new Headers({
 
 const app = new Server();
 
-app.get("/", () => {
-  const file = Bun.file("./src/dist/index.html");
-  return new Response(file, { headers: CORS_HEADERS });
+app.get("/", async (req:Request) => {
+  const query = await db.select(["*"], "Appointments");
+  return Response.json(query);
 });
 
 app.options("/dlogin", (req: Request) => {
