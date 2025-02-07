@@ -19,8 +19,8 @@ const CORS_HEADERS = new Headers({
 
 const app = new Server();
 
-app.get("/", async (req:Request) => {
-  const query = await db.select(["*"], "Appointments");
+app.get("/", async (req: Request) => {
+  const query = (await db.select(["*"], "Appointments")).getResults();
   return Response.json(query);
 });
 
@@ -103,7 +103,6 @@ app.post("/dlogin", async (req: Request) => {
       "Email",
       email.toLowerCase(),
     );
-    console.log(donor);
 
     //if we cannot find the donor in the table we return a  status code 400 for an invalid request
     if (!donor) {
@@ -502,13 +501,11 @@ app.get("/events", async (req: Request) => {
 });
 
 //HTTP POST route for serching for donation centres in a city/town
-app.post("/search", async (req: Request) => {
+app.post("/getcentres", async (req: Request) => {
   //we parse the city from the request body
   const { city } = await parseBody(req);
   //then find all centres with that city as their city
-  const query = (await db.select(["*"], "Centre"))
-    .where("City", city)
-    .getResults();
+  const query = (await db.select(["*"], "Centre")).getResults();
   // return the Appointments as a response object
   return Response.json(query, { status: 200, headers: CORS_HEADERS });
 });
