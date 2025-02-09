@@ -502,11 +502,7 @@ app.get("/events", async (req: Request) => {
 
 //HTTP POST route for serching for donation centres in a city/town
 app.get("/getcentres", async (req: Request) => {
-  //we parse the city from the request body
-  const { city } = await parseBody(req);
-  //then find all centres with that city as their city
   const query = (await db.select(["*"], "Centre")).getResults();
-  // return the Appointments as a response object
   return Response.json(query, { status: 200, headers: CORS_HEADERS });
 });
 
