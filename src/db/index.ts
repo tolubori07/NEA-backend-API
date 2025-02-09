@@ -7,7 +7,7 @@ import { readJsonFile } from "../utils/readJsonFile";
 class Database {
   private query: GenericObject[] = [];
 
-  constructor() { }
+  constructor() {}
 
   //create table
   createTable(name: string): void {
@@ -22,7 +22,7 @@ class Database {
   async findOne(from: string, key: string, target: any) {
     try {
       // Read the JSON file and parse it into an array of objects
-      const file = await readJsonFile(from);
+      const file = await readJsonFile(from.toLowerCase());
       const data = file.data;
       // Sort the data based on the specified key
       const sortedList = quickSort(data, key);
@@ -45,7 +45,7 @@ class Database {
   //select required fields
   async select(fields: string[], from: string): Promise<this> {
     try {
-      const file = await readJsonFile(from);
+      const file = await readJsonFile(from.toLowerCase());
       const data = file.data;
 
       if (data && Array.isArray(data)) {
@@ -143,7 +143,7 @@ class Database {
     fields: string[],
     newVals: any[],
   ) {
-    let file = await readJsonFile(table);
+    let file = await readJsonFile(table.toLowerCase());
     const data = file.data;
     const index = binarySearch(data, key, target);
     if (index === -1) return null;
@@ -160,7 +160,7 @@ class Database {
   }
 
   async delete(table: string, key: string, target: string) {
-    let file = await readJsonFile(table);
+    let file = await readJsonFile(table.toLowerCase());
     const data = file.data;
     const ID_Count = file.IDX;
     const index = binarySearch(data, key, target);

@@ -99,7 +99,7 @@ app.post("/dlogin", async (req: Request) => {
 
     // Initialise use the findone method to find a donor with the matching email
     const donor: Donor = await db.findOne(
-      "Donors",
+      "donors",
       "Email",
       email.toLowerCase(),
     );
