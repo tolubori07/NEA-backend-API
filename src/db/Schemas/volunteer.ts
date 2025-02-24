@@ -1,19 +1,21 @@
+import { readJsonFile } from "../../utils/readJsonFile";
+
 interface VolunteerType {
-  ID: string,
-  First_Name: string,
-  Last_Name: string,
-  Email: string,
-  Date_Of_Birth: Date,
-  Title: string,
-  Phone_Number: string,
-  City_of_residence: string,
-  PostCode: string,
-  BloodGroup: string,
-  Genotype: string,
-  Occupation: string,
-  Password: string,
-  Admin: boolean,
-  ServiceOffered: string,
+  ID: string;
+  First_Name: string;
+  Last_Name: string;
+  Email: string;
+  Date_Of_Birth: Date;
+  Title: string;
+  Phone_Number: string;
+  City_of_residence: string;
+  PostCode: string;
+  BloodGroup: string;
+  Genotype: string;
+  Occupation: string;
+  Password: string;
+  Admin: boolean;
+  services: string[];
 }
 class Volunteer implements VolunteerType {
   ID: string;
@@ -30,7 +32,7 @@ class Volunteer implements VolunteerType {
   Occupation: string;
   Password: string;
   Admin: boolean;
-  ServiceOffered: string;
+  services: string[];
 
   private constructor(
     ID: string,
@@ -45,9 +47,10 @@ class Volunteer implements VolunteerType {
     BloodGroup: string,
     Genotype: string,
     Password: string,
-    ServiceOffered: string,
+    services: string[],
     Occupation: string,
-    Admin: boolean) {
+    Admin: boolean,
+  ) {
     this.ID = ID;
     this.First_Name = First_Name;
     this.Last_Name = Last_Name;
@@ -61,9 +64,59 @@ class Volunteer implements VolunteerType {
     this.Genotype = Genotype;
     this.Occupation = Occupation;
     this.Password = Password;
-    this.ServiceOffered = ServiceOffered;
+    this.services = services;
     this.Admin = Admin;
+  }
+
+  //Factory method to create a new Donor instance
+  static async create(
+    First_Name: string,
+    Last_Name: string,
+    Email: string,
+    Date_of_Birth: Date,
+    Title: string,
+    Phone_Number: string,
+    City_of_residence: string,
+    PostCode: string,
+    BloodGroup: string,
+    Genotype: string,
+    Occupation: string,
+    services: string[],
+    Password: string,
+    Admin: boolean,
+  ): Promise<Volunteer> {
+    const id = await this.generateID();
+    return new Volunteer(
+      id,
+      First_Name,
+      Last_Name,
+      Email,
+      Date_of_Birth,
+      Title,
+      Phone_Number,
+      City_of_residence,
+      PostCode,
+      BloodGroup,
+      Genotype,
+      Password,
+      services,
+      Occupation,
+      Admin,
+    );
+  }
+
+  // Method to generate the ID based on the current list of appointments
+  private static async generateID(): Promise<string> {
+    const list = await readJsonFile("volunteer");
+    const nextID = list.IDX + 1;
+    if (nextID < 10) {
+      return `V00${nextID}`;
+    } else if (nextID < 100) {
+      return `V0${nextID}`;
+    } else {
+      return `V${nextID}`;
+    }
   }
 }
 
-export { Volunteer, type VolunteerType }
+export { Volunteer, type VolunteerType };

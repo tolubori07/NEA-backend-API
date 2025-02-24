@@ -12,7 +12,9 @@ import type { GenericObject } from "./types";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
-  "Access-Control-Allow-Origin": "https://onehealthls.netlify.app", // Instead of '*'
+  "Access-Control-Allow-Origin": process.env?.DEV
+    ? "http://localhost:5173"
+    : "https://onehealthls.netlify.app", // Instead of '*'
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 });
@@ -396,6 +398,100 @@ app.post("/appointment", async (req: Request) => {
   }
 });
 
+app.post("/vsignup", async (req: Request) => {
+  try {
+    const {
+      firstname,
+      lastname,
+      email,
+      DOB,
+      title,
+      phoneNumber,
+      city,
+      postcode,
+      bloodgroup,
+      genotype,
+      occupation,
+      skills,
+      password,
+    } = await parseBody(req);
+    const check = await db.findOne("Volunteer", "Email", email);
+    if (check) {
+      return new Response("Volunteer Already Exists", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (
+      !firstname ||
+      !lastname ||
+      !email ||
+      !DOB ||
+      !title ||
+      !phoneNumber ||
+      !city ||
+      !postcode ||
+      !bloodgroup ||
+      !genotype ||
+      !occupation ||
+      !skills ||
+      !password
+    ) {
+      return new Response("Please fill all fields", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    } else {
+      const hashedpassword = sha256.sign(password);
+      try {
+        const volunteer: Volunteer = await Volunteer.create(
+          firstname,
+          lastname,
+          email.toLowerCase(),
+          DOB,
+          title,
+          phoneNumber,
+          city,
+          postcode,
+          bloodgroup,
+          genotype,
+          occupation,
+          skills,
+          hashedpassword,
+          false, //admin = false for generic volunteer
+        );
+        await db.insertINTO("volunteer", volunteer);
+        return Response.json(
+          {
+            token: generateToken(volunteer.ID),
+            id: volunteer.ID,
+            firstname: volunteer.First_Name,
+            lastname: volunteer.Last_Name,
+            email: volunteer.Email,
+            dob: volunteer.Date_Of_Birth,
+            title: volunteer.Title,
+            phone: volunteer.Phone_Number,
+            city: volunteer.City_of_residence,
+            postcode: volunteer.PostCode,
+            bloodgroup: volunteer.BloodGroup,
+            genotype: volunteer.Genotype,
+            occupation: volunteer.Occupation,
+            skills: volunteer.services,
+          },
+          { status: 201, headers: CORS_HEADERS },
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  } catch (error) {
+    return new Response("Invalid request body" + error, {
+      status: 400,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
 app.post("/vlogin", async (req: Request) => {
   try {
     const { email, password } = await parseBody(req);
@@ -616,22 +712,12 @@ app.put("/rescheduleappointment", async (req: Request) => {
       });
     }
 
-    const { password, fields, values, appointment } = (await parseBody(
-      req,
-    )) as {
-      password: string;
+    const { fields, values, appointment } = (await parseBody(req)) as {
       fields: string[];
       values: any[];
       appointment: string;
     };
-    const isPasswordCorrect: boolean = sha256.verify(password, donor.Password);
-    if (!isPasswordCorrect) {
-      return new Response("Oops, Incorrect Password", {
-        status: 401,
-        headers: CORS_HEADERS,
-      });
-    }
-
+    console.log(values, fields, appointment);
     await db.update("appointments", "ID", appointment, fields, values);
 
     return new Response("Appointment rescheduled successfully", {
@@ -668,5 +754,45 @@ app.delete("/cancelappointment", async (req: Request) => {
     console.error("An error occured", error);
   }
 });
+
+app.put("/updatepassword", async (req: Request) => {
+  try {
+    const donor: Donor = await protect(req);
+    console.table(donor);
+    if (!donor) {
+      return new Response("Unauthorised, Donor not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const { current, newpassword } = await parseBody(req);
+    const isPasswordCorrect = sha256.verify(current, donor.Password);
+    if (!isPasswordCorrect) {
+      return new Response("Oops, Incorrect Password", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    await db.update(
+      "donors",
+      "ID",
+      donor.ID,
+      ["Password"],
+      [sha256.sign(newpassword)],
+    );
+    return new Response("Password changeed successfully", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (err) {
+    console.error("Error changing password:", err);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
 //@ts-ignore
 app.listen(port);

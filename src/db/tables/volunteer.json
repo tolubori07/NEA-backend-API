@@ -1,5 +1,5 @@
 {
-  "ID_Count": 4,
+  "IDX": 5,
   "data": [
     {
       "ID": "V001",
@@ -15,7 +15,9 @@
       "Genotype": "AA",
       "Occupation": "Software Engineer",
       "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-      "ServiceOffered": "Technical Support",
+      "ServiceOffered": [
+        "Technical Support"
+      ],
       "Admin": true
     },
     {
@@ -32,7 +34,9 @@
       "Genotype": "AS",
       "Occupation": "Nurse",
       "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-      "ServiceOffered": "Medical Assistance",
+      "ServiceOffered": [
+        "Medical Assistance"
+      ],
       "Admin": false
     },
     {
@@ -49,7 +53,9 @@
       "Genotype": "AC",
       "Occupation": "Teacher",
       "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-      "ServiceOffered": "Educational Support",
+      "ServiceOffered": [
+        "Educational Support"
+      ],
       "Admin": false
     },
     {
@@ -66,8 +72,32 @@
       "Genotype": "AA",
       "Occupation": "Lawyer",
       "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-      "ServiceOffered": "Legal Advice",
+      "ServiceOffered": [
+        "Legal Advice"
+      ],
       "Admin": true
+    },
+    {
+      "ID": "V005",
+      "First_Name": "testuser",
+      "Last_Name": "#1",
+      "Email": "testuser1@email.com",
+      "Date_Of_Birth": "2003-03-03",
+      "Title": "Mr",
+      "Phone_Number": "07302 947816",
+      "City_of_residence": "Stoke",
+      "PostCode": "ST4 5NT",
+      "BloodGroup": "AB",
+      "Genotype": "AS",
+      "Occupation": "Student",
+      "Password": "6a09e6675e00b94da93f1a2619c11788510e527fc9bfa8f5a2ce360fccc65b9d",
+      "Admin": false,
+      "services": [
+        "Web development",
+        "Graphic Design",
+        "Outreach Volunteer",
+        "Others"
+      ]
     }
   ]
 }

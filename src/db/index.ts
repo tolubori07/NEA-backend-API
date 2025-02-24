@@ -7,7 +7,7 @@ import { readJsonFile } from "../utils/readJsonFile";
 class Database {
   private query: GenericObject[] = [];
 
-  constructor() {}
+  constructor() { }
 
   //create table
   createTable(name: string): void {
@@ -154,7 +154,7 @@ class Database {
 
     await write(
       `./src/db/tables/${table.toLocaleLowerCase()}.json`,
-      JSON.stringify({ data: data }, null, 4),
+      JSON.stringify({ IDX: file.IDX, data: data }, null, 4),
     );
     return this;
   }
