@@ -9,6 +9,7 @@ import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
+import { eventVolunteer } from "./db/Schemas/events:volunteer";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -525,7 +526,7 @@ app.post("/vlogin", async (req: Request) => {
           genotype: volunteer.Genotype,
           occupation: volunteer.Occupation,
           admin: volunteer.Admin,
-          service: volunteer.ServiceOffered,
+          service: volunteer.services,
         },
         { status: 200, headers: CORS_HEADERS },
       );
@@ -541,33 +542,14 @@ app.post("/vlogin", async (req: Request) => {
 app.post("/events", async (req: Request) => {
   const volunteer: Volunteer = await protect(req);
   if (volunteer && volunteer.Admin === true) {
-    const {
-      name,
-      location,
-      address,
-      postcode,
-      date,
-      start_time,
-      end_time,
-      target,
-    } = await parseBody(req);
-    if (
-      !name ||
-      !location ||
-      !address ||
-      !postcode ||
-      !date ||
-      !start_time ||
-      !end_time ||
-      !target
-    ) {
+    const { name, center, date, start_time, end_time, target } =
+      await parseBody(req);
+    if (!name || !center || !date || !start_time || !end_time || !target) {
       return new Response("Please fill in all details", { status: 400 });
     }
     const event = await Event.create(
       name,
-      location,
-      address,
-      postcode,
+      center,
       date,
       start_time,
       end_time,
@@ -787,6 +769,57 @@ app.put("/updatepassword", async (req: Request) => {
     });
   } catch (err) {
     console.error("Error changing password:", err);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.get("/announcements", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    if (!volunteer) {
+      return new Response("Unauthorised, volunteer not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    const announcements = (
+      await db.select(["*"], "announcements")
+    ).getResults();
+    return Response.json(announcements, {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error(error);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.get("/bookevent", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    if (!volunteer) {
+      return new Response("Unauthorised, volunteer not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const { event } = await parseBody(req);
+    const volunteerEvent = await eventVolunteer.create(event, volunteer.ID);
+    await db.insertINTO("events:volunteer", volunteerEvent);
+    return new Response("Created successfully", {
+      status: 201,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error(error);
     return new Response("Internal Server Error", {
       status: 500,
       headers: CORS_HEADERS,
