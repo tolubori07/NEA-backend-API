@@ -9,7 +9,11 @@ import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
 import { Event } from "./db/Schemas/event";
 import type { GenericObject } from "./types";
-import { eventVolunteer } from "./db/Schemas/events:volunteer";
+import { quickSort } from "./algorithms/Quicksort";
+import {
+  eventVolunteer,
+  type eventVolunteerType,
+} from "./db/Schemas/events:volunteer";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -562,22 +566,6 @@ app.post("/events", async (req: Request) => {
   }
 });
 
-app.get("/events", async (req: Request) => {
-  const volunteer: Volunteer = await protect(req);
-  if (volunteer) {
-    const query = await db.select(["*"], "Events");
-    if (JSON.stringify(query) === "[]") {
-      return new Response("There are no events", {
-        status: 200,
-        headers: CORS_HEADERS,
-      });
-    }
-    return Response.json(query, { status: 200 });
-  } else {
-    return new Response("Not authorised", { status: 401 });
-  }
-});
-
 //HTTP POST route for serching for donation centres in a city/town
 app.get("/getcentres", async (req: Request) => {
   const query = (await db.select(["*"], "Centre")).getResults();
@@ -823,6 +811,127 @@ app.get("/bookevent", async (req: Request) => {
     return new Response("Internal Server Error", {
       status: 500,
       headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.get("/signedevents", async (req: Request) => {
+  const volunteer: Volunteer = await protect(req);
+  if (volunteer) {
+    const preq = (await db.select(["*"], "events:volunteer"))
+      .where("volunteer", volunteer.ID)
+      .getResults();
+    const query = [];
+    for (const event of preq) {
+      if (event.volunteer == volunteer.ID) {
+        let preq = await db.findOne("Events", "ID", event.Event);
+        const location = await db.findOne("centre", "ID", preq.Location);
+        preq.Location = location;
+        query.push(preq);
+      }
+    }
+    if (JSON.stringify(preq) === "[]") {
+      return new Response("There are no events", {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+    return Response.json(query, { status: 200 });
+  } else {
+    return new Response("Not authorised", { status: 401 });
+  }
+});
+
+app.get("/unsignedevents", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    console.log(volunteer.ID);
+
+    // Fetch all events associated with the volunteer
+    const preq = (await db.select(["*"], "events:volunteer"))
+      .where("volunteer", volunteer.ID)
+      .getResults();
+
+    // Extract the IDs of events associated with the volunteer
+    const volunteerEventIds = preq.map((ev) => ev.Event);
+    console.log(volunteerEventIds);
+
+    // Fetch all events from the Events table
+    const allEvents = (await db.select(["*"], "Events")).getResults();
+    const pre = [];
+    for (let event of allEvents) {
+      const location = await db.findOne("centre", "ID", event.Location);
+      event.Location = location;
+    }
+
+    // Filter out events that are associated with the volunteer's ID
+    const query = allEvents.filter(
+      (event) => !volunteerEventIds.includes(event.ID),
+    );
+
+    if (query.length === 0) {
+      return new Response("There are no events available", {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    return Response.json(query, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return new Response("Not authorized or an error occurred", { status: 401 });
+  }
+});
+
+app.get("/upcomingevent", async (req: Request) => {
+  const volunteer: Volunteer = await protect(req);
+  console.log(volunteer.ID);
+  if (volunteer) {
+    const preq = (await db.select(["*"], "events:volunteer"))
+      .where("volunteer", volunteer.ID)
+      .getResults();
+    let query = [];
+    for (const event of preq) {
+      if (event.volunteer == volunteer.ID) {
+        let preq = await db.findOne("Events", "ID", event.Event);
+        const location = await db.findOne("centre", "ID", preq.Location);
+        preq.Location = location;
+        query.push(preq);
+      }
+    }
+    query = quickSort(query, "Date");
+    console.log(query);
+    if (JSON.stringify(preq) === "[]") {
+      return new Response("There are no events", {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+    return Response.json(query[0], { status: 200 });
+  } else {
+    return new Response("Not authorised", { status: 401 });
+  }
+});
+
+app.get("/event", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    if (volunteer) {
+      const url = new URL(req.url);
+      const id = url.searchParams.get("id");
+      let event = await db.findOne("Events", "ID", id);
+      const location = await db.findOne("centre", "ID", event.Location);
+      event.Location = location;
+      return Response.json(event, { status: 200, headers: CORS_HEADERS });
+    } else {
+      return new Response("UnAuthorised", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+  } catch (error) {
+    return new Response("Errror while fetching appointment" + error, {
+      status: 500,
     });
   }
 });
