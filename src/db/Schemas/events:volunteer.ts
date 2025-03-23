@@ -18,11 +18,11 @@ class eventVolunteer implements eventVolunteerType {
   }
 
   static async create(
-    event: string,
+    Event: string,
     volunteer: string,
   ): Promise<eventVolunteer> {
     const id = await this.generateID();
-    return new eventVolunteer(id, event, volunteer);
+    return new eventVolunteer(id, Event, volunteer);
   }
 
   private static async generateID(): Promise<string> {

@@ -14,6 +14,7 @@ import {
   eventVolunteer,
   type eventVolunteerType,
 } from "./db/Schemas/events:volunteer";
+import { sendHTMLmail } from "./utils/gmailHTMLmailer";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -23,6 +24,77 @@ const CORS_HEADERS = new Headers({
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 });
+
+const headers = ` <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Password Updated</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: rgb(214, 219, 232);
+            margin: 0;
+            padding: 0;
+            color: rgb(52, 53, 54);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            background-color: #fff;
+            border: 4px solid rgb(218, 51, 39);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .header {
+            background-color: rgb(218, 51, 39);
+            padding: 30px;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            text-transform: uppercase;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0;
+            letter-spacing: 2px;
+            border-bottom: 4px solid rgb(231, 127, 132);
+        }
+
+        .content {
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .content p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: rgb(52, 53, 54);
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 4px solid rgb(218, 51, 39);
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+`;
+const close = ` </body>
+</html>
+`;
 
 const app = new Server();
 
@@ -219,6 +291,29 @@ app.post("/dsignup", async (req: Request) => {
           hashedpassword,
         );
         await db.insertINTO("donors", donor);
+        const htmlContent = `
+${headers}
+<div class="container">
+        <div class="header">
+            <h1>Welcome to Onehealth Life Savers</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${title}${" "}${firstname},</p>
+            <p>Thank you for signing up to become a life-saver! Your willingness to donate blood can help save lives and make a real difference in the community.</p>
+            <p>Get started by booking your first donation appointment today.</p>
+            <a href="onehealthls.netlify.app/donor/bookappointment" class="button">Schedule Your Donation</a>
+        </div>
+        <div class="footer">
+            <p>If you have any questions, feel free to contact us at <a mailto="olifesavers@gmail.com">olifesavers@gmail.com</p>
+            <p>&copy; 2025 LifeSave Blood Donation. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+        sendHTMLmail(email, "Welcome Aboard", htmlContent)
+          .then(console.log)
+          .catch(console.error);
+
         return Response.json(
           {
             token: generateToken(donor.ID),
@@ -263,11 +358,35 @@ app.post("/appointments", async (req: Request) => {
       });
     }
     // create an appointment using the data parsed from the request and the donor's ID
-    const appointmemnt = await Appointment.create(date, time, centre, donor.ID);
+    const appointment = await Appointment.create(date, time, centre, donor.ID);
     //then insert the appointment into the appointments table
-    await db.insertINTO("appointments", appointmemnt);
+    await db.insertINTO("appointments", appointment);
+    const content = `
+${headers}    <div class="container">
+        <div class="header">
+            <h1>Your Appointment is Confirmed!</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${donor.Title} ${donor.LastName},</p>
+            <p>Thank you for scheduling your blood donation appointment! We're excited to have you join us in this life-saving effort.</p>
+            <p>To view the details of your appointment, please click the link below:</p>
+            
+            <a href="https://onehealthls.netlify.app/manageappointment/${appointment.ID}" class="button">View Your Appointment Details</a>
+
+            <p>If you have any questions or need to reschedule, feel free to contact us.</p>
+        </div>
+        <div class="footer">
+            <p>If you need further assistance, please reach out to us at olifesavers@gmail.com.</p>
+            <p>&copy; 2025 LifeSave Blood Donation. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+    sendHTMLmail(donor.Email, "Thank You for booking an Appointment!", content)
+      .then(console.log)
+      .catch(console.error);
     //return the appointments as a response
-    const res = Response.json(appointmemnt, {
+    const res = Response.json(appointment, {
       status: 201,
       headers: CORS_HEADERS,
     });
@@ -466,6 +585,27 @@ app.post("/vsignup", async (req: Request) => {
           false, //admin = false for generic volunteer
         );
         await db.insertINTO("volunteer", volunteer);
+        const htmlContent = `
+${headers}
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to Onehealth Life Savers</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${title}${" "}${firstname},</p>
+            <p>Thank you for signing up to become a life-saver! Your willingness to volunteer your time can help save lives and make a real difference in the community.</p>
+        </div>
+        <div class="footer">
+            <p>If you have any questions, feel free to contact us at <a mailto="olifesavers@gmail.com">olifesavers@gmail.com</p>
+            <p>&copy; 2025 LifeSave Blood Donation. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+        sendHTMLmail(email, "Welcome Aboard", htmlContent)
+          .then(console.log)
+          .catch(console.error);
+
         return Response.json(
           {
             token: generateToken(volunteer.ID),
@@ -687,9 +827,31 @@ app.put("/rescheduleappointment", async (req: Request) => {
       values: any[];
       appointment: string;
     };
-    console.log(values, fields, appointment);
     await db.update("appointments", "ID", appointment, fields, values);
+    const content = `
+${headers}
+    <div class="container">
+        <div class="header">
+            Appointment Rescheduled!
+        </div>
 
+        <div class="content">
+            <p>Hi [Donor Name],</p>
+            <p>Your blood donation appointment has been successfully rescheduled with OneHealth Lifesavers.</p>
+            <p>You can view your updated appointment details by clicking the button below:</p>
+            <a href="https://onehealthls.netlfy.app/donor/manageappointment/${appointment}" class="button">View Appointment</a>
+        </div>
+
+        <div class="footer">
+            <p>If you have any questions or need assistance, contact us at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a>.</p>
+            <p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+    sendHTMLmail(donor.Email, "Appointment Rescheduled", content)
+      .then(console.log)
+      .catch(console.error);
     return new Response("Appointment rescheduled successfully", {
       status: 200,
       headers: CORS_HEADERS,
@@ -705,23 +867,53 @@ app.put("/rescheduleappointment", async (req: Request) => {
 
 //@ts-ignore
 app.delete("/cancelappointment", async (req: Request) => {
-  try {
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+  const donor = await protect(req);
+  if (donor) {
+    try {
+      const url = new URL(req.url);
+      const id = url.searchParams.get("id");
 
-    if (!id) {
-      return new Response("No ID provided", {
-        status: 401,
+      if (!id) {
+        return new Response("No ID provided", {
+          status: 401,
+          headers: CORS_HEADERS,
+        });
+      }
+      db.delete("appointments", "ID", id);
+      const content = `
+${headers}
+    <div class="container">
+        <div class="header">
+            Appointment Deleted
+        </div>
+
+        <div class="content">
+            <p>Hi ${donor.FirstName},</p>
+            <p>We’re reaching out to let you know that your blood donation appointment with OneHealth Lifesavers has been successfully cancelled.</p>
+            <p>If you’d like to book another appointment in the future, we’d be more than happy to have you back!</p>
+        </div>
+
+        <div class="footer">
+            <p>If you have any questions or need assistance, contact us at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a>.</p>
+            <p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+        </div>
+    </div>
+
+${close}
+`;
+      sendHTMLmail(donor.Email, "Appointment Rescheduled", content)
+        .then(console.log)
+        .catch(console.error);
+
+      return new Response("Appointments deleted", {
+        status: 200,
         headers: CORS_HEADERS,
       });
+    } catch (error) {
+      console.error("An error occured", error);
     }
-    db.delete("appointments", "ID", id);
-    return new Response("Appointments deleted", {
-      status: 200,
-      headers: CORS_HEADERS,
-    });
-  } catch (error) {
-    console.error("An error occured", error);
+  } else {
+    return new Response("Unauthorised", { status: 401, headers: CORS_HEADERS });
   }
 });
 
@@ -751,6 +943,30 @@ app.put("/updatepassword", async (req: Request) => {
       ["Password"],
       [sha256.sign(newpassword)],
     );
+    const content = `   
+${headers}
+<div class="container">
+        <div class="header">
+            Password Updated
+        </div>
+
+        <div class="content">
+            <p>Hi ${donor.FirstName},</p>
+            <p>We wanted to let you know that your password for OneHealth Lifesavers has been successfully updated.</p>
+            <p>If you didn’t make this change, please contact our support team immediately.</p>
+        </div>
+
+        <div class="footer">
+            <p>If you have any questions or need assistance, contact us at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a>.</p>
+            <p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+    sendHTMLmail(donor.Email, "Appointment Rescheduled", content)
+      .then(console.log)
+      .catch(console.error);
+
     return new Response("Password changeed successfully", {
       status: 200,
       headers: CORS_HEADERS,
@@ -789,9 +1005,10 @@ app.get("/announcements", async (req: Request) => {
   }
 });
 
-app.get("/bookevent", async (req: Request) => {
+app.post("/bookevent", async (req: Request) => {
   try {
     const volunteer: Volunteer = await protect(req);
+    console.log(volunteer);
     if (!volunteer) {
       return new Response("Unauthorised, volunteer not verified", {
         status: 401,
@@ -799,9 +1016,33 @@ app.get("/bookevent", async (req: Request) => {
       });
     }
 
-    const { event } = await parseBody(req);
-    const volunteerEvent = await eventVolunteer.create(event, volunteer.ID);
+    const { Event } = await parseBody(req);
+    const volunteerEvent = await eventVolunteer.create(Event, volunteer.ID);
     await db.insertINTO("events:volunteer", volunteerEvent);
+    const content = `
+${headers}
+<div class="container">
+        <div class="header">
+            Thank you!
+        </div>
+
+        <div class="content">
+            <p>Dear ${volunteer.Title} ${volunteer.Last_Name},</p>
+            <p>Thank you for signing up to volunteer at our upcoming event! Your help is invaluable, and we’re excited to have you join us.</p>
+            <p>Click below to view the event details and manage your signup:</p>
+            <a href="https://onehealthls.netlify.app/volunteer/event/${Event.ID}" class="button">View Event</a>
+        </div>
+
+        <div class="footer">
+            <p>If you have any questions or need assistance, contact us at olifesavers@gmail.com.</p>
+            <p>&copy; 2025 OneHealth Life Savers. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+    sendHTMLmail(volunteer.Email, "Event Booked Successfully.", content)
+      .then(console.log)
+      .catch(console.error);
     return new Response("Created successfully", {
       status: 201,
       headers: CORS_HEADERS,
@@ -885,18 +1126,19 @@ app.get("/unsignedevents", async (req: Request) => {
 
 app.get("/upcomingevent", async (req: Request) => {
   const volunteer: Volunteer = await protect(req);
-  console.log(volunteer.ID);
   if (volunteer) {
     const preq = (await db.select(["*"], "events:volunteer"))
       .where("volunteer", volunteer.ID)
       .getResults();
     let query = [];
+    console.log("preq", preq);
     for (const event of preq) {
       if (event.volunteer == volunteer.ID) {
-        let preq = await db.findOne("Events", "ID", event.Event);
-        const location = await db.findOne("centre", "ID", preq.Location);
-        preq.Location = location;
-        query.push(preq);
+        let prequery = await db.findOne("Events", "ID", event.Event);
+        console.log("Prequery:", prequery);
+        const location = await db.findOne("centre", "ID", prequery.Location);
+        prequery.Location = location;
+        query.push(prequery);
       }
     }
     query = quickSort(query, "Date");
@@ -915,20 +1157,12 @@ app.get("/upcomingevent", async (req: Request) => {
 
 app.get("/event", async (req: Request) => {
   try {
-    const volunteer: Volunteer = await protect(req);
-    if (volunteer) {
-      const url = new URL(req.url);
-      const id = url.searchParams.get("id");
-      let event = await db.findOne("Events", "ID", id);
-      const location = await db.findOne("centre", "ID", event.Location);
-      event.Location = location;
-      return Response.json(event, { status: 200, headers: CORS_HEADERS });
-    } else {
-      return new Response("UnAuthorised", {
-        status: 400,
-        headers: CORS_HEADERS,
-      });
-    }
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    let event = await db.findOne("Events", "ID", id);
+    const location = await db.findOne("centre", "ID", event.Location);
+    event.Location = location;
+    return Response.json(event, { status: 200, headers: CORS_HEADERS });
   } catch (error) {
     return new Response("Errror while fetching appointment" + error, {
       status: 500,
@@ -936,5 +1170,19 @@ app.get("/event", async (req: Request) => {
   }
 });
 
+/*app.get("/sendmessage", async (req: Request) => {
+  const volunteer = await protect(req);
+  if (volunteer) {
+    const htmlContent = `
+  <h1 style="color: #007bff;">Hello from Bun with Gmail!</h1>
+  <p>This is a custom <strong>HTML email</strong> sent using Bun and Gmail's SMTP.</p>
+  <p>🚀 Isn't that cool?</p>
+`;
+    sendHTMLmail("jaabir0307@gmail.com", "Test HTML Email", htmlContent)
+      .then(console.log)
+      .catch(console.error);
+  }
+});
+*/
 //@ts-ignore
 app.listen(port);

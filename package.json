@@ -11,7 +11,8 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "mailparser": "^3.7.2",
+    "smtp-server": "^3.13.6"
   }
 }
-
