@@ -901,7 +901,7 @@ ${headers}
 
 ${close}
 `;
-      sendHTMLmail(donor.Email, "Appointment Rescheduled", content)
+      sendHTMLmail(donor.Email, "Appointment Cancelled", content)
         .then(console.log)
         .catch(console.error);
 
@@ -1008,7 +1008,6 @@ app.get("/announcements", async (req: Request) => {
 app.post("/bookevent", async (req: Request) => {
   try {
     const volunteer: Volunteer = await protect(req);
-    console.log(volunteer);
     if (!volunteer) {
       return new Response("Unauthorised, volunteer not verified", {
         status: 401,
@@ -1131,18 +1130,15 @@ app.get("/upcomingevent", async (req: Request) => {
       .where("volunteer", volunteer.ID)
       .getResults();
     let query = [];
-    console.log("preq", preq);
     for (const event of preq) {
       if (event.volunteer == volunteer.ID) {
         let prequery = await db.findOne("Events", "ID", event.Event);
-        console.log("Prequery:", prequery);
         const location = await db.findOne("centre", "ID", prequery.Location);
         prequery.Location = location;
         query.push(prequery);
       }
     }
     query = quickSort(query, "Date");
-    console.log(query);
     if (JSON.stringify(preq) === "[]") {
       return new Response("There are no events", {
         status: 200,
@@ -1170,19 +1166,38 @@ app.get("/event", async (req: Request) => {
   }
 });
 
-/*app.get("/sendmessage", async (req: Request) => {
+app.post("/sendmessage", async (req: Request) => {
   const volunteer = await protect(req);
-  if (volunteer) {
-    const htmlContent = `
-  <h1 style="color: #007bff;">Hello from Bun with Gmail!</h1>
-  <p>This is a custom <strong>HTML email</strong> sent using Bun and Gmail's SMTP.</p>
-  <p>🚀 Isn't that cool?</p>
-`;
-    sendHTMLmail("jaabir0307@gmail.com", "Test HTML Email", htmlContent)
-      .then(console.log)
-      .catch(console.error);
+  if (!volunteer) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { subject, message } = await parseBody(req);
+
+  if (!subject || !message) {
+    return new Response("Subject and message are required", { status: 400 });
+  }
+
+  const htmlContent = `
+    <h1 style="color: #FE767F;">New Message from ${volunteer.Email} ${volunteer.ID}</h1>
+    <p><strong>Subject:</strong> ${subject}</p>
+    <p>${message}</p>
+  `;
+
+  try {
+    console.log(volunteer)
+    await sendHTMLmail(
+      "olifesavers@gmail.com",
+      subject,
+      htmlContent,
+      volunteer.Email,
+    );
+    return new Response("Message sent successfully", { status: 200 });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    return new Response("Failed to send message", { status: 500 });
   }
 });
-*/
+
 //@ts-ignore
 app.listen(port);

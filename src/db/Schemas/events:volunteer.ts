@@ -2,17 +2,17 @@ import { readJsonFile } from "../../utils/readJsonFile";
 
 interface eventVolunteerType {
   ID: string;
-  event: string;
+  Event: string;
   volunteer: string;
 }
 
 class eventVolunteer implements eventVolunteerType {
   ID: string;
-  event: string;
+  Event: string;
   volunteer: string;
 
-  private constructor(ID: string, event: string, volunteer: string) {
-    this.event = event;
+  private constructor(ID: string, Event: string, volunteer: string) {
+    this.Event = Event;
     this.volunteer = volunteer;
     this.ID = ID;
   }

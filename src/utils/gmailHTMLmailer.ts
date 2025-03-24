@@ -1,12 +1,9 @@
 const tls = await import("tls");
-import { SMTPServer } from "smtp-server";
-import { simpleParser } from "mailparser";
-
 
 const SMTP_HOST = "smtp.gmail.com";
 const SMTP_PORT = 465; // TLS uses port 465
 const USER = "olifesavers@gmail.com";
-const PASSWORD = "vrwg jywb hdpe jcrv"; // Use App Password if 2FA is enabled
+const PASSWORD = process.env.SMTP_PASSWORD; // Use App Password if 2FA is enabled
 const FROM = USER;
 
 /**
@@ -14,18 +11,27 @@ const FROM = USER;
  * @param {string} to - Recipient email address
  * @param {string} subject - Email subject
  * @param {string} htmlBody - HTML content for the email body
+ * @param {string} replyTo - Reply-To email address (optional)
  */
 
-export const sendHTMLmail = async (to: string, subject: string, htmlBody: string) => {
+export const sendHTMLmail = async (
+  to: string,
+  subject: string,
+  htmlBody: string,
+  replyTo: string = "",
+) => {
   return new Promise((resolve, reject) => {
+    //@ts-ignore
     const client = tls.connect(SMTP_PORT, SMTP_HOST, () => {
       console.log("✅ Connected to Gmail SMTP");
       const boundary = "----BunCustomEmailBoundary";
 
+      // Prepare the email content
       const content = [
         `Subject: ${subject}`,
         `From: ${FROM}`,
         `To: ${to}`,
+        replyTo ? `Reply-To: ${replyTo}` : "", // Include Reply-To only if it's provided
         `MIME-Version: 1.0`,
         `Content-Type: multipart/alternative; boundary="${boundary}"`,
         ``,
@@ -40,9 +46,12 @@ export const sendHTMLmail = async (to: string, subject: string, htmlBody: string
         `${htmlBody}`,
         ``,
         `--${boundary}--`,
-        `.`, // Marks end of the email data
-      ].join("\r\n");
+        `.`, // Marks the end of the email data
+      ]
+        .filter(Boolean) // Remove empty strings (e.g., if no replyTo is provided)
+        .join("\r\n");
 
+      // SMTP Commands for email sending
       const commands = [
         `EHLO localhost`,
         `AUTH LOGIN`,
