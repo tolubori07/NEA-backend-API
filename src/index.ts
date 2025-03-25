@@ -3,7 +3,7 @@ import db from "./db";
 import parseBody from "./utils/parseBody";
 import sha256 from "./algorithms/sha-256";
 import { Donor } from "./db/Schemas/donors";
-import { Volunteer } from "./db/Schemas/volunteer";
+import { Volunteer, type VolunteerType } from "./db/Schemas/volunteer";
 import { generateToken } from "./utils/generatetoken";
 import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
 import { protect } from "./middleware/authMiddleware";
@@ -15,6 +15,7 @@ import {
   type eventVolunteerType,
 } from "./db/Schemas/events:volunteer";
 import { sendHTMLmail } from "./utils/gmailHTMLmailer";
+import { binarySearch } from "./algorithms/BinarySearch";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = new Headers({
@@ -1185,7 +1186,7 @@ app.post("/sendmessage", async (req: Request) => {
   `;
 
   try {
-    console.log(volunteer)
+    console.log(volunteer);
     await sendHTMLmail(
       "olifesavers@gmail.com",
       subject,
@@ -1201,3 +1202,62 @@ app.post("/sendmessage", async (req: Request) => {
 
 //@ts-ignore
 app.listen(port);
+
+//@ts-ignore
+app.delete("/cancelevent", async (req: Request) => {
+  const volunteer: VolunteerType = await protect(req);
+  if (volunteer) {
+    try {
+      const url = new URL(req.url);
+      const id = url.searchParams.get("id");
+      const event = await db.findOne("Events", "ID", id);
+
+      if (!id) {
+        return new Response("No ID provided", {
+          status: 401,
+          headers: CORS_HEADERS,
+        });
+      }
+      const evarray = (await db.select(["*"], "events:volunteer"))
+        .where("Event", id)
+        .getResults();
+      //@ts-ignore
+      const ev: eventVolunteerType =
+        evarray[binarySearch(evarray, "volunteer", volunteer.ID)];
+      await db.delete("events:volunteer", "ID", ev.ID);
+      const date = new Date(event.Date);
+      const content = `
+${headers}
+    <div class="container">
+        <div class="header">
+            We're Sorry to See You Go
+        </div>
+        <div class="content">
+            <p>Hi ${volunteer.First_Name},</p>
+            <p>We’re sorry to hear that you’ve cancelled your participation for <strong>${event.Name}</strong> on <strong>${date.getDate()}-${date.getMonth()+1}-${date.getFullYear()}</strong>. Your support means the world to us, and we’ll definitely feel your absence.</p>
+            <p>If you’d ever like to volunteer with us again in the future, we’d love to have you back. Every pair of hands makes a difference, and yours has always been appreciated.</p>
+            <p>Thank you again for everything, and we hope to see you soon!</p>
+        </div>
+        <div class="footer">
+            <p>If you have any questions, reach out at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a></p>
+            <p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+        </div>
+    </div>
+
+${close}
+`;
+      sendHTMLmail(volunteer.Email, "We understand 😔", content)
+        .then(console.log)
+        .catch(console.error);
+
+      return new Response("event deleted", {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    } catch (error) {
+      console.error("An error occured", error);
+    }
+  } else {
+    return new Response("Unauthorised", { status: 401, headers: CORS_HEADERS });
+  }
+});
