@@ -372,7 +372,7 @@ ${headers}    <div class="container">
             <p>Thank you for scheduling your blood donation appointment! We're excited to have you join us in this life-saving effort.</p>
             <p>To view the details of your appointment, please click the link below:</p>
             
-            <a href="https://onehealthls.netlify.app/manageappointment/${appointment.ID}" class="button">View Your Appointment Details</a>
+            <a href="https://onehealthls.netlify.app/donor/manageappointment/${appointment.ID}" class="button">View Your Appointment Details</a>
 
             <p>If you have any questions or need to reschedule, feel free to contact us.</p>
         </div>
@@ -1099,7 +1099,6 @@ app.get("/unsignedevents", async (req: Request) => {
 
     // Fetch all events from the Events table
     const allEvents = (await db.select(["*"], "Events")).getResults();
-    const pre = [];
     for (let event of allEvents) {
       const location = await db.findOne("centre", "ID", event.Location);
       event.Location = location;
