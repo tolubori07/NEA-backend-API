@@ -163,6 +163,48 @@ app.options("/dsignup", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
+app.options("/availableSlots", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/updatepassword", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/announcements", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/bookevent", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/dsignup", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/signedevents", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/unsignedevents", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/upcominevent", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/sendmessage", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+app.options("/cancelevent", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
+
 
 //HTTP POST verb endpoint for donor login
 app.post("/dlogin", async (req: Request) => {
@@ -622,7 +664,7 @@ ${close}
             bloodgroup: volunteer.BloodGroup,
             genotype: volunteer.Genotype,
             occupation: volunteer.Occupation,
-            skills: volunteer.services,
+            skills: volunteer.Services,
           },
           { status: 201, headers: CORS_HEADERS },
         );
@@ -671,7 +713,7 @@ app.post("/vlogin", async (req: Request) => {
           genotype: volunteer.Genotype,
           occupation: volunteer.Occupation,
           admin: volunteer.Admin,
-          service: volunteer.services,
+          service: volunteer.Services,
         },
         { status: 200, headers: CORS_HEADERS },
       );
@@ -837,7 +879,7 @@ ${headers}
         </div>
 
         <div class="content">
-            <p>Hi [Donor Name],</p>
+            <p>Hi ${donor.FirstName},</p>
             <p>Your blood donation appointment has been successfully rescheduled with OneHealth Lifesavers.</p>
             <p>You can view your updated appointment details by clicking the button below:</p>
             <a href="https://onehealthls.netlfy.app/donor/manageappointment/${appointment}" class="button">View Appointment</a>
@@ -1086,7 +1128,6 @@ app.get("/signedevents", async (req: Request) => {
 app.get("/unsignedevents", async (req: Request) => {
   try {
     const volunteer: Volunteer = await protect(req);
-    console.log(volunteer.ID);
 
     // Fetch all events associated with the volunteer
     const preq = (await db.select(["*"], "events:volunteer"))
@@ -1095,7 +1136,6 @@ app.get("/unsignedevents", async (req: Request) => {
 
     // Extract the IDs of events associated with the volunteer
     const volunteerEventIds = preq.map((ev) => ev.Event);
-    console.log(volunteerEventIds);
 
     // Fetch all events from the Events table
     const allEvents = (await db.select(["*"], "Events")).getResults();
@@ -1129,6 +1169,13 @@ app.get("/upcomingevent", async (req: Request) => {
     const preq = (await db.select(["*"], "events:volunteer"))
       .where("volunteer", volunteer.ID)
       .getResults();
+    if (JSON.stringify(preq) === "[]") {
+      return new Response("1", {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
     let query = [];
     for (const event of preq) {
       if (event.volunteer == volunteer.ID) {
@@ -1139,12 +1186,7 @@ app.get("/upcomingevent", async (req: Request) => {
       }
     }
     query = quickSort(query, "Date");
-    if (JSON.stringify(preq) === "[]") {
-      return new Response("There are no events", {
-        status: 200,
-        headers: CORS_HEADERS,
-      });
-    }
+
     return Response.json(query[0], { status: 200 });
   } else {
     return new Response("Not authorised", { status: 401 });
@@ -1185,7 +1227,6 @@ app.post("/sendmessage", async (req: Request) => {
   `;
 
   try {
-    console.log(volunteer);
     await sendHTMLmail(
       "olifesavers@gmail.com",
       subject,
@@ -1199,8 +1240,6 @@ app.post("/sendmessage", async (req: Request) => {
   }
 });
 
-//@ts-ignore
-app.listen(port);
 
 //@ts-ignore
 app.delete("/cancelevent", async (req: Request) => {
@@ -1233,7 +1272,7 @@ ${headers}
         </div>
         <div class="content">
             <p>Hi ${volunteer.First_Name},</p>
-            <p>We’re sorry to hear that you’ve cancelled your participation for <strong>${event.Name}</strong> on <strong>${date.getDate()}-${date.getMonth()+1}-${date.getFullYear()}</strong>. Your support means the world to us, and we’ll definitely feel your absence.</p>
+            <p>We’re sorry to hear that you’ve cancelled your participation for <strong>${event.Name}</strong> on <strong>${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}</strong>. Your support means the world to us, and we’ll definitely feel your absence.</p>
             <p>If you’d ever like to volunteer with us again in the future, we’d love to have you back. Every pair of hands makes a difference, and yours has always been appreciated.</p>
             <p>Thank you again for everything, and we hope to see you soon!</p>
         </div>
@@ -1260,3 +1299,6 @@ ${close}
     return new Response("Unauthorised", { status: 401, headers: CORS_HEADERS });
   }
 });
+
+//@ts-ignore
+app.listen(port);

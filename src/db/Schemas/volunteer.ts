@@ -15,7 +15,7 @@ interface VolunteerType {
   Occupation: string;
   Password: string;
   Admin: boolean;
-  services: string[];
+  Services: string[];
 }
 class Volunteer implements VolunteerType {
   ID: string;
@@ -32,7 +32,7 @@ class Volunteer implements VolunteerType {
   Occupation: string;
   Password: string;
   Admin: boolean;
-  services: string[];
+  Services: string[];
 
   private constructor(
     ID: string,
@@ -47,7 +47,7 @@ class Volunteer implements VolunteerType {
     BloodGroup: string,
     Genotype: string,
     Password: string,
-    services: string[],
+    Services: string[],
     Occupation: string,
     Admin: boolean,
   ) {
@@ -64,7 +64,7 @@ class Volunteer implements VolunteerType {
     this.Genotype = Genotype;
     this.Occupation = Occupation;
     this.Password = Password;
-    this.services = services;
+    this.Services = Services;
     this.Admin = Admin;
   }
 
@@ -81,7 +81,7 @@ class Volunteer implements VolunteerType {
     BloodGroup: string,
     Genotype: string,
     Occupation: string,
-    services: string[],
+    Services: string[],
     Password: string,
     Admin: boolean,
   ): Promise<Volunteer> {
@@ -99,7 +99,7 @@ class Volunteer implements VolunteerType {
       BloodGroup,
       Genotype,
       Password,
-      services,
+      Services,
       Occupation,
       Admin,
     );

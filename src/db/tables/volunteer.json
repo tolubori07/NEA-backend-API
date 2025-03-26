@@ -15,7 +15,7 @@
             "Genotype": "AA",
             "Occupation": "Software Engineer",
             "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-            "ServiceOffered": [
+            "Services": [
                 "Technical Support"
             ],
             "Admin": true
@@ -34,7 +34,7 @@
             "Genotype": "AS",
             "Occupation": "Nurse",
             "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-            "ServiceOffered": [
+            "Services": [
                 "Medical Assistance"
             ],
             "Admin": false
@@ -53,7 +53,7 @@
             "Genotype": "AC",
             "Occupation": "Teacher",
             "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-            "ServiceOffered": [
+            "Services": [
                 "Educational Support"
             ],
             "Admin": false
@@ -72,7 +72,7 @@
             "Genotype": "AA",
             "Occupation": "Lawyer",
             "Password": "6a09e667f8ffb94d0e231a26fe071788510e527fa524a8f5dbed360fdce65b9d",
-            "ServiceOffered": [
+            "Services": [
                 "Legal Advice"
             ],
             "Admin": true
@@ -92,7 +92,7 @@
             "Occupation": "Student",
             "Password": "6a09e6675e00b94da93f1a2619c11788510e527fc9bfa8f5a2ce360fccc65b9d",
             "Admin": false,
-            "services": [
+            "Services": [
                 "Web development",
                 "Graphic Design",
                 "Outreach Volunteer",
@@ -114,7 +114,7 @@
             "Occupation": "Student",
             "Password": "6a09e6678296f5092fcb08fa8bbcbea4510e527ffb62aae1b849a45799462ed1",
             "Admin": false,
-            "services": [
+            "Services": [
                 "Outreach Volunteer",
                 "Web development"
             ]
