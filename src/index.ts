@@ -100,7 +100,7 @@ const close = ` </body>
 
 const app = new Server();
 
-/*app.get("/", async (req: Request) => {
+app.get("/", async (req: Request) => {
   const query = (await db.select(["*"], "Appointments")).getResults();
   return Response.json(query);
 });
@@ -192,7 +192,7 @@ app.options("/unsignedevents", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
-app.options("/upcominevent", (req: Request) => {
+app.options("/upcomingevent", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
@@ -203,7 +203,7 @@ app.options("/sendmessage", (req: Request) => {
 app.options("/cancelevent", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
-});*/
+});
 
 //HTTP POST verb endpoint for donor login
 app.post("/dlogin", async (req: Request) => {
