@@ -18,13 +18,14 @@ import { sendHTMLmail } from "./utils/gmailHTMLmailer";
 import { binarySearch } from "./algorithms/BinarySearch";
 
 const port: string | undefined = process.env.PORT;
-const CORS_HEADERS = new Headers({
+const CORS_HEADERS = {
   "Access-Control-Allow-Origin": process.env?.DEV
     ? "http://localhost:5173"
     : "https://onehealthls.netlify.app", // Instead of '*'
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
-});
+  "Access-Control-Allow-Credentials": "true",
+};
 
 const headers = ` <!DOCTYPE html>
 <html lang="en">
@@ -203,8 +204,6 @@ app.options("/cancelevent", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
-
-
 
 //HTTP POST verb endpoint for donor login
 app.post("/dlogin", async (req: Request) => {
@@ -1239,7 +1238,6 @@ app.post("/sendmessage", async (req: Request) => {
     return new Response("Failed to send message", { status: 500 });
   }
 });
-
 
 //@ts-ignore
 app.delete("/cancelevent", async (req: Request) => {
