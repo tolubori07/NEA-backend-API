@@ -1153,7 +1153,7 @@ app.get("/unsignedevents", async (req: Request) => {
       });
     }
 
-    return Response.json(query, { status: 200 });
+    return Response.json(query, { status: 200, headers: CORS_HEADERS });
   } catch (error) {
     console.error(error);
     return new Response("Not authorized or an error occurred", { status: 401 });
@@ -1186,7 +1186,10 @@ app.get("/upcomingevent", async (req: Request) => {
 
     return Response.json(query[0], { status: 200, headers: CORS_HEADERS });
   } else {
-    return new Response("Not authorised", { status: 401 });
+    return new Response("Not authorised", {
+      status: 401,
+      headers: CORS_HEADERS,
+    });
   }
 });
 
@@ -1230,10 +1233,13 @@ app.post("/sendmessage", async (req: Request) => {
       htmlContent,
       volunteer.Email,
     );
-    return new Response("Message sent successfully", { status: 200 });
+    return new Response("Message sent successfully", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
   } catch (error) {
     console.error("Error sending message:", error);
-    return new Response("Failed to send message", { status: 500 });
+    return new Response("Failed to send message", { status: 500,headers:CORS_HEADERS });
   }
 });
 
