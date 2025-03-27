@@ -1116,7 +1116,7 @@ app.get("/signedevents", async (req: Request) => {
         headers: CORS_HEADERS,
       });
     }
-    return Response.json(query, { status: 200 ,headers:CORS_HEADERS});
+    return Response.json(query, { status: 200, headers: CORS_HEADERS });
   } else {
     return new Response("Not authorised", { status: 401 });
   }
@@ -1184,7 +1184,7 @@ app.get("/upcomingevent", async (req: Request) => {
     }
     query = quickSort(query, "Date");
 
-    return Response.json(query[0], { status: 200 });
+    return Response.json(query[0], { status: 200, headers: CORS_HEADERS });
   } else {
     return new Response("Not authorised", { status: 401 });
   }
