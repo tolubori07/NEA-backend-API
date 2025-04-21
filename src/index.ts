@@ -3,6 +3,7 @@ import db from "./db";
 import parseBody from "./utils/parseBody";
 import sha256 from "./algorithms/sha-256";
 import { Donor } from "./db/Schemas/donors";
+import { Announcement } from "./db/Schemas/announcements";
 import { Volunteer, type VolunteerType } from "./db/Schemas/volunteer";
 import { generateToken } from "./utils/generatetoken";
 import { Appointment, type AppointmentType } from "./db/Schemas/appointments";
@@ -19,7 +20,7 @@ import { binarySearch } from "./algorithms/BinarySearch";
 
 const port: string | undefined = process.env.PORT;
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*", // Instead of '*'
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET, PUT, PATCH, DELETE",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Credentials": "true",
@@ -661,7 +662,7 @@ ${close}
             bloodgroup: volunteer.BloodGroup,
             genotype: volunteer.Genotype,
             occupation: volunteer.Occupation,
-            skills: volunteer.Services,
+            services: volunteer.Services,
           },
           { status: 201, headers: CORS_HEADERS },
         );
@@ -740,7 +741,7 @@ app.post("/events", async (req: Request) => {
       target,
     );
     await db.insertINTO("events", event);
-    return Response.json(event, { status: 201, headers: CORS_HEADERS });
+    return Response.json("", { status: 201, headers: CORS_HEADERS });
   } else {
     return new Response("Not authorised", { status: 400 });
   }
@@ -960,7 +961,6 @@ ${close}
 app.put("/updatepassword", async (req: Request) => {
   try {
     const donor: Donor = await protect(req);
-    console.table(donor);
     if (!donor) {
       return new Response("Unauthorised, Donor not verified", {
         status: 401,
@@ -1020,6 +1020,105 @@ ${close}
   }
 });
 
+app.put("/vupdatepassword", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    if (!volunteer) {
+      return new Response("Unauthorised, Volunteer not verified", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const { current, newpassword } = await parseBody(req);
+    const isPasswordCorrect = sha256.verify(current, volunteer.Password);
+    if (!isPasswordCorrect) {
+      return new Response("Oops, Incorrect Password", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    await db.update(
+      "volunteer",
+      "ID",
+      volunteer.ID,
+      ["Password"],
+      [sha256.sign(newpassword)],
+    );
+    const content = `   
+${headers}
+<div class="container">
+        <div class="header">
+            Password Updated
+        </div>
+
+        <div class="content">
+            <p>Hi ${volunteer.First_Name},</p>
+            <p>We wanted to let you know that your password for OneHealth Lifesavers has been successfully updated.</p>
+            <p>If you didn’t make this change, please contact our support team immediately.</p>
+        </div>
+
+        <div class="footer">
+            <p>If you have any questions or need assistance, contact us at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a>.</p>
+            <p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+        </div>
+    </div>
+${close}
+`;
+    sendHTMLmail(volunteer.Email, "Appointment Rescheduled", content)
+      .then(console.log)
+      .catch(console.error);
+
+    return new Response("Password changed successfully", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (err) {
+    console.error("Error changing password:", err);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.post("/announcements", async (req: Request) => {
+  try {
+    const volunteer: Volunteer = await protect(req);
+    if (!volunteer || !volunteer.Admin) {
+      return new Response("Unauthorised, you don't have admin access", {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    const { Title, Body } = await parseBody(req);
+    if (!Title || !Body) {
+      return new Response("Missing fields in request", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+    const time = new Date().toISOString();
+    const announcement = await Announcement.create(
+      Body,
+      Title,
+      volunteer.ID,
+      time,
+    );
+    await db.insertINTO("announcements", announcement);
+    return new Response("", {
+      status: 204,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error(error);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
 app.get("/announcements", async (req: Request) => {
   try {
     const volunteer: Volunteer = await protect(req);
@@ -1029,9 +1128,18 @@ app.get("/announcements", async (req: Request) => {
         headers: CORS_HEADERS,
       });
     }
-    const announcements = (
-      await db.select(["*"], "announcements")
-    ).getResults();
+    const announcements = (await db.select(["*"], "announcements"))
+      .orderBy("Time")
+      .getResults();
+    for (let announcement of announcements) {
+      const announcer = await db.findOne(
+        "volunteer",
+        "ID",
+        announcement.Announcer,
+      );
+      const fullName = `${announcer.First_Name} ${announcer.Last_Name}`;
+      announcement.Announcer = fullName;
+    }
     return Response.json(announcements, {
       status: 200,
       headers: CORS_HEADERS,
@@ -1105,8 +1213,8 @@ app.get("/signedevents", async (req: Request) => {
     for (const event of preq) {
       if (event.volunteer == volunteer.ID) {
         let preq = await db.findOne("Events", "ID", event.Event);
-        const location = await db.findOne("centre", "ID", preq.Location);
-        preq.Location = location;
+        const center = await db.findOne("centre", "ID", preq.Center);
+        preq.Center = center;
         query.push(preq);
       }
     }
@@ -1137,8 +1245,8 @@ app.get("/unsignedevents", async (req: Request) => {
     // Fetch all events from the Events table
     const allEvents = (await db.select(["*"], "Events")).getResults();
     for (let event of allEvents) {
-      const location = await db.findOne("centre", "ID", event.Location);
-      event.Location = location;
+      const center = await db.findOne("centre", "ID", event.Center);
+      event.Center = center;
     }
 
     // Filter out events that are associated with the volunteer's ID
@@ -1177,13 +1285,12 @@ app.get("/upcomingevent", async (req: Request) => {
     for (const event of preq) {
       if (event.volunteer == volunteer.ID) {
         let prequery = await db.findOne("Events", "ID", event.Event);
-        const location = await db.findOne("centre", "ID", prequery.Location);
-        prequery.Location = location;
+        const center = await db.findOne("centre", "ID", prequery.Center);
+        prequery.Center = center;
         query.push(prequery);
       }
     }
     query = quickSort(query, "Date");
-
     return Response.json(query[0], { status: 200, headers: CORS_HEADERS });
   } else {
     return new Response("Not authorised", {
@@ -1198,8 +1305,8 @@ app.get("/event", async (req: Request) => {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     let event = await db.findOne("Events", "ID", id);
-    const location = await db.findOne("centre", "ID", event.Location);
-    event.Location = location;
+    const center = await db.findOne("centre", "ID", event.Center);
+    event.Center = center;
     return Response.json(event, { status: 200, headers: CORS_HEADERS });
   } catch (error) {
     return new Response("Errror while fetching appointment" + error, {
@@ -1239,7 +1346,10 @@ app.post("/sendmessage", async (req: Request) => {
     });
   } catch (error) {
     console.error("Error sending message:", error);
-    return new Response("Failed to send message", { status: 500,headers:CORS_HEADERS });
+    return new Response("Failed to send message", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
 });
 
@@ -1299,6 +1409,190 @@ ${close}
     }
   } else {
     return new Response("Unauthorised", { status: 401, headers: CORS_HEADERS });
+  }
+});
+
+app.post("/donorrequest", async (req: Request) => {
+  const donor: Donor = await protect(req);
+  if (!donor) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const donors = (await db.select(["*"], "Donors")).getResults();
+
+  const { pints, type, location, contact } = await parseBody(req);
+
+  if (!pints || !type || !location || !contact) {
+    return new Response("Subject and message are required", { status: 400 });
+  }
+  const subject = "ALERT! EMERGENCY DONOR NEEDED!!!";
+
+  try {
+    for (const donorToEmail of donors) {
+      const htmlContent = `
+${headers}
+<div class="container">
+    <h1 style="color: #FE767F;">New Message from ${donor.Email} </h1>
+<div class="header">
+    <p><strong> ${subject}</strong></p>
+</div>
+<div class="content">
+    <p>Dear ${donorToEmail.FirstName}</p>
+    <p>We would like to seek your help in saving a life today<br/> We have a patient in need of a donor and you could help either by notifiying someone you know that could donate or by donating your self.</p>
+<p>Here are the details</p>
+<h3>Number of pints needed: ${pints}</h3>
+<h3>Blood Type: ${type}</h3>
+<h3>Location: ${location}</h3>
+<h3>Contact: ${contact}</h3>
+<p>If you are available and fit, please kindly help to save a life.</p>
+<p>Donors will be compensated.</p>
+</div>
+<div class="footer">
+<p>If you have any questions, reach out at <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a></p>
+<p>&copy; 2025 OneHealth Lifesavers. All rights reserved.</p>
+</div>
+</div>
+
+${close}
+  `;
+      await sendHTMLmail(
+        donorToEmail.Email,
+        subject,
+        htmlContent,
+        "olifesavers@gmail.com",
+      );
+    }
+    return new Response("", {
+      status: 204,
+      headers: CORS_HEADERS,
+    });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    return new Response("Failed to send message", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.put("/dforgotpassword", async (req: Request) => {
+  try {
+    const { email, password } = await parseBody(req);
+
+    if (!email || !password) {
+      return new Response("Please fill all fields", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const donor = await db.findOne("donors", "Email", email);
+    if (!donor) {
+      return new Response("Donor not found", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await db.update(
+      "donors",
+      "ID",
+      donor.ID,
+      ["Password"],
+      [sha256.sign(password)],
+    );
+
+    const content = `
+${headers}
+<div class="container">
+  <div class="header">Password Reset Successful</div>
+  <div class="content">
+    <p>Hi ${donor.FirstName},</p>
+    <p>Your password for OneHealth Lifesavers donor portal has been reset successfully.</p>
+    <p>If you did not request this reset, please contact our support team immediately.</p>
+  </div>
+  <div class="footer">
+    <p>Need help? Email <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a></p>
+    <p>&copy; 2025 OneHealth Lifesavers</p>
+  </div>
+</div>
+${close}
+    `;
+
+    sendHTMLmail(donor.Email, "Password Reset Confirmation", content)
+      .then(console.log)
+      .catch(console.error);
+
+    return new Response("Password reset successful", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (err) {
+    console.error("Error in /dforgotpassword:", err);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+});
+
+app.put("/vforgotpassword", async (req: Request) => {
+  try {
+    const { email, password } = await parseBody(req);
+
+    if (!email || !password) {
+      return new Response("Please fill all fields", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    const volunteer = await db.findOne("volunteer", "Email", email);
+    if (!volunteer) {
+      return new Response("Volunteer not found", {
+        status: 404,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await db.update(
+      "volunteer",
+      "ID",
+      volunteer.ID,
+      ["Password"],
+      [sha256.sign(password)],
+    );
+
+    const content = `
+${headers}
+<div class="container">
+  <div class="header">Password Reset Successful</div>
+  <div class="content">
+    <p>Hi ${volunteer.First_Name},</p>
+    <p>Your password for OneHealth Lifesavers volunteer portal has been reset successfully.</p>
+    <p>If you did not request this reset, please contact our team immediately.</p>
+  </div>
+  <div class="footer">
+    <p>Need help? Email <a href="mailto:olifesavers@gmail.com">olifesavers@gmail.com</a></p>
+    <p>&copy; 2025 OneHealth Lifesavers</p>
+  </div>
+</div>
+${close}
+    `;
+
+    sendHTMLmail(volunteer.Email, "Password Reset Confirmation", content)
+      .then(console.log)
+      .catch(console.error);
+
+    return new Response("Password reset successful", {
+      status: 200,
+      headers: CORS_HEADERS,
+    });
+  } catch (err) {
+    console.error("Error in /vforgotpassword:", err);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
 });
 
