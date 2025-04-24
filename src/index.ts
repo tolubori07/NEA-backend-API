@@ -1361,6 +1361,7 @@ app.delete("/cancelevent", async (req: Request) => {
       const url = new URL(req.url);
       const id = url.searchParams.get("id");
       const event = await db.findOne("Events", "ID", id);
+      console.log(id);
 
       if (!id) {
         return new Response("No ID provided", {
@@ -1370,10 +1371,12 @@ app.delete("/cancelevent", async (req: Request) => {
       }
       const evarray = (await db.select(["*"], "events:volunteer"))
         .where("Event", id)
+        .orderBy("volunteer")
         .getResults();
       //@ts-ignore
       const ev: eventVolunteerType =
         evarray[binarySearch(evarray, "volunteer", volunteer.ID)];
+      console.log(binarySearch(evarray, "volunteer", volunteer.ID));
       await db.delete("events:volunteer", "ID", ev.ID);
       const date = new Date(event.Date);
       const content = `
