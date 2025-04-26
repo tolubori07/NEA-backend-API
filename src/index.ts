@@ -203,6 +203,10 @@ app.options("/cancelevent", (req: Request) => {
   // Apply CORS headers to preflight requests
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 });
+app.options("/donorrequest", (req: Request) => {
+  // Apply CORS headers to preflight requests
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
 
 //HTTP POST verb endpoint for donor login
 app.post("/dlogin", async (req: Request) => {
