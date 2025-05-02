@@ -715,7 +715,7 @@ app.post("/vlogin", async (req: Request) => {
           genotype: volunteer.Genotype,
           occupation: volunteer.Occupation,
           admin: volunteer.Admin,
-          service: volunteer.Services,
+          services: volunteer.Services,
         },
         { status: 200, headers: CORS_HEADERS },
       );
